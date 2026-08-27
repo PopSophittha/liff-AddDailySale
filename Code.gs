@@ -4,47 +4,67 @@
  ****************************************************/
 
 const CONFIG = {
-  SPREADSHEET_ID: '1XZ8tlL8aLcgCCdgWb1KPEO4ZI1Mf9t-BrXXeqmeXp90',
 
-  SALES_SHEET: 'รายงานยอดขาย',
-  STAFF_SHEET: 'พนักงาน',
+  SPREADSHEET_ID:
+    '1XZ8tlL8aLcgCCdgWb1KPEO4ZI1Mf9t-BrXXeqmeXp90',
 
-  // Folder สำหรับเก็บรูปใบส่งยอด
-  DRIVE_FOLDER_ID: '1fNe5bMW9N1SfSTVdLgFJLPAlRCuvh2ft',
+  SALES_SHEET:
+    'รายงานยอดขาย',
+
+  // ROOT FOLDER
+  DRIVE_FOLDER_ID:
+    '1fNe5bMW9N1SfSTVdLgFJLPAlRCuvh2ft',
+
+  SHOPS: [
+    'M1',
+    'M85',
+    'M95',
+    'M89'
+  ],
+
+  SHIFTS: [
+    '09.00-14.00',
+    '14.00-18.00',
+    '18.00-23.00'
+  ]
+
 };
 
-/**
- * GET API
+
+/****************************************************
+ * GET
  *
- * ใช้สำหรับ
- * - getShops
- * - getStaffByShop
- */
+ * ใช้สำหรับทดสอบ API เท่านั้น
+ *
+ * ระบบไม่โหลดร้าน/พนักงานจาก Google Sheet แล้ว
+ ****************************************************/
+
 function doGet(e) {
-
-  const action = e.parameter.action || '';
-  const callback = e.parameter.callback || '';
-
-  let result;
 
   try {
 
-    if (action === 'getShops') {
+    const action =
+      e &&
+      e.parameter
+        ? e.parameter.action || ''
+        : '';
+
+    const callback =
+      e &&
+      e.parameter
+        ? e.parameter.callback || ''
+        : '';
+
+    let result;
+
+
+    if (action === 'test') {
 
       result = {
         success: true,
-        data: getShops()
-      };
-
-    }
-
-    else if (action === 'getStaffByShop') {
-
-      result = {
-        success: true,
-        data: getStaffByShop(
-          e.parameter.shop || ''
-        )
+        message: 'Apps Script ทำงานปกติ',
+        time:
+          new Date().toISOString()
       };
 
     }
@@ -53,63 +73,77 @@ function doGet(e) {
 
       result = {
         success: false,
-        message: 'Unknown action'
+        message: 'Unknown action',
+        receivedAction: action
       };
 
     }
+
+
+    if (callback) {
+
+      return ContentService
+        .createTextOutput(
+          callback +
+          '(' +
+          JSON.stringify(result) +
+          ')'
+        )
+        .setMimeType(
+          ContentService.MimeType.JAVASCRIPT
+        );
+
+    }
+
+
+    return ContentService
+      .createTextOutput(
+        JSON.stringify(result)
+      )
+      .setMimeType(
+        ContentService.MimeType.JSON
+      );
 
   }
 
   catch (error) {
 
-    result = {
-      success: false,
-      message: error.message
-    };
-
-  }
-
-
-  /**
-   * JSONP
-   *
-   * GitHub Pages สามารถเรียก Apps Script
-   * ผ่าน <script> ได้
-   */
-
-  if (callback) {
-
     return ContentService
       .createTextOutput(
-        callback + '(' +
-        JSON.stringify(result) +
-        ')'
+        JSON.stringify({
+          success: false,
+          message: error.message
+        })
       )
       .setMimeType(
-        ContentService.MimeType.JAVASCRIPT
+        ContentService.MimeType.JSON
       );
 
   }
 
-
-  return ContentService
-    .createTextOutput(
-      JSON.stringify(result)
-    )
-    .setMimeType(
-      ContentService.MimeType.JSON
-    );
 }
 
 
-/**
- * POST API
- *
- * ใช้สำหรับบันทึกรายงาน
- */
+/****************************************************
+ * POST
+ ****************************************************/
+
 function doPost(e) {
 
   try {
+
+    if (
+      !e ||
+      !e.postData ||
+      !e.postData.contents
+    ) {
+
+      throw new Error(
+        'ไม่พบข้อมูล POST'
+      );
+
+    }
+
 
     const data =
       JSON.parse(
@@ -149,131 +183,18 @@ function doPost(e) {
 }
 
 
-/**
- * GET SHOPS
- */
-function getShops() {
+/****************************************************
+ * SAVE SALES REPORT
+ ****************************************************/
 
-  const ss =
-    SpreadsheetApp.openById(
-      CONFIG.SPREADSHEET_ID
-    );
-
-  const sheet =
-    ss.getSheetByName(
-      CONFIG.STAFF_SHEET
-    );
-
-  if (!sheet) {
-    throw new Error(
-      'ไม่พบ Sheet: ' +
-      CONFIG.STAFF_SHEET
-    );
-  }
-
-  const lastRow =
-    sheet.getLastRow();
-
-  if (lastRow < 2) {
-    return [];
-  }
-
-  const values =
-    sheet
-      .getRange(
-        2,
-        1,
-        lastRow - 1,
-        2
-      )
-      .getValues();
-
-
-  const shops =
-    values
-      .map(row =>
-        String(row[0]).trim()
-      )
-      .filter(Boolean);
-
-
-  return [
-    ...new Set(shops)
-  ];
-}
-
-
-/**
- * GET STAFF BY SHOP
- */
-function getStaffByShop(shop) {
-
-  if (!shop) {
-    return [];
-  }
-
-  const ss =
-    SpreadsheetApp.openById(
-      CONFIG.SPREADSHEET_ID
-    );
-
-  const sheet =
-    ss.getSheetByName(
-      CONFIG.STAFF_SHEET
-    );
-
-  if (!sheet) {
-    throw new Error(
-      'ไม่พบ Sheet: ' +
-      CONFIG.STAFF_SHEET
-    );
-  }
-
-  const lastRow =
-    sheet.getLastRow();
-
-  if (lastRow < 2) {
-    return [];
-  }
-
-  const values =
-    sheet
-      .getRange(
-        2,
-        1,
-        lastRow - 1,
-        2
-      )
-      .getValues();
-
-
-  const staff =
-    values
-      .filter(row =>
-        String(row[0]).trim() ===
-        String(shop).trim()
-      )
-      .map(row =>
-        String(row[1]).trim()
-      )
-      .filter(Boolean);
-
-
-  return [
-    ...new Set(staff)
-  ];
-}
-
-
-/**
- * SAVE REPORT
- */
 function saveSalesReport(data) {
 
   if (!data) {
+
     throw new Error(
       'ไม่พบข้อมูล'
     );
+
   }
 
 
@@ -293,19 +214,22 @@ function saveSalesReport(data) {
 
 
   if (!sheet) {
+
     throw new Error(
       'ไม่พบ Sheet: ' +
       CONFIG.SALES_SHEET
     );
+
   }
 
 
   let imageUrl = '';
 
 
-  /**
+  /**************************************************
    * SAVE IMAGE
-   */
+   **************************************************/
+
   if (
     data.image &&
     data.image.data
@@ -313,30 +237,50 @@ function saveSalesReport(data) {
 
     imageUrl =
       saveImageToDrive(
+
         data.image.data,
+
         data.image.name ||
           'ใบส่งยอด.jpg',
+
         data.image.mimeType ||
           'image/jpeg',
+
         data.shop,
-        data.date
+
+        data.date,
+
+        data.shift
+
       );
 
   }
 
 
-  /**
+  /**************************************************
    * EMPLOYEES
-   */
+   **************************************************/
+
   const employeeNames =
     Array.isArray(data.employees)
       ? data.employees.join(', ')
       : '';
 
 
-  /**
+  /**************************************************
+   * SHIFT
+   **************************************************/
+
+  const shiftText =
+    normalizeShifts(
+      data.shift
+    );
+
+
+  /**************************************************
    * SAVE SHEET
-   */
+   **************************************************/
+
   sheet.appendRow([
 
     new Date(),
@@ -349,7 +293,7 @@ function saveSalesReport(data) {
 
     data.date || '',
 
-    data.shift || '',
+    shiftText,
 
     Number(data.totalSales) || 0,
 
@@ -375,50 +319,136 @@ function saveSalesReport(data) {
 
 
   return {
+
     success: true,
+
     message:
       'บันทึกรายงานเรียบร้อยแล้ว',
-    imageUrl: imageUrl
+
+    imageUrl:
+      imageUrl
+
   };
+
 }
 
 
-/**
+/****************************************************
  * VALIDATE
- */
+ ****************************************************/
+
 function validateData(data) {
 
+  /**************************************************
+   * SHOP
+   **************************************************/
+
   if (!data.shop) {
+
     throw new Error(
-      'กรุณาเลือกร้าน'
+      'ไม่พบร้าน'
     );
+
   }
 
+
+  if (
+    CONFIG.SHOPS.indexOf(
+      String(data.shop).trim()
+    ) === -1
+  ) {
+
+    throw new Error(
+      'ร้านไม่ถูกต้อง: ' +
+      data.shop
+    );
+
+  }
+
+
+  /**************************************************
+   * DATE
+   **************************************************/
+
   if (!data.date) {
+
     throw new Error(
       'กรุณาเลือกวันที่'
     );
+
   }
 
+
+  /**************************************************
+   * SHIFT
+   **************************************************/
+
   if (!data.shift) {
+
     throw new Error(
-      'กรุณาเลือกกะ'
+      'กรุณาเลือกกะอย่างน้อย 1 กะ'
     );
+
   }
+
+
+  const shifts =
+    parseShifts(
+      data.shift
+    );
+
+
+  if (!shifts.length) {
+
+    throw new Error(
+      'ไม่พบกะที่เลือก'
+    );
+
+  }
+
+
+  const invalidShifts =
+    shifts.filter(
+      function(shift) {
+
+        return CONFIG.SHIFTS.indexOf(
+          shift
+        ) === -1;
+
+      }
+    );
+
+
+  if (invalidShifts.length) {
+
+    throw new Error(
+      'พบกะไม่ถูกต้อง: ' +
+      invalidShifts.join(', ')
+    );
+
+  }
+
+
+  /**************************************************
+   * EMPLOYEES
+   **************************************************/
 
   if (
     !Array.isArray(data.employees) ||
     data.employees.length === 0
   ) {
+
     throw new Error(
       'กรุณาเลือกพนักงานอย่างน้อย 1 คน'
     );
+
   }
 
 
-  /**
+  /**************************************************
    * SALES
-   */
+   **************************************************/
+
   const totalSales =
     Number(data.totalSales) || 0;
 
@@ -440,20 +470,26 @@ function validateData(data) {
 
   if (
     Math.abs(
-      totalSales - salesSum
+      totalSales -
+      salesSum
     ) > 0.01
   ) {
 
     throw new Error(
-      'ยอดขายไม่ตรงกัน'
+      'ยอดขายไม่ตรงกัน: ' +
+      'รวมยอดขาย ' +
+      totalSales +
+      ' ≠ เงินสด + เครดิต + QR ' +
+      salesSum
     );
 
   }
 
 
-  /**
+  /**************************************************
    * EMPLOYEE SALES
-   */
+   **************************************************/
+
   const employeeTotal =
     Number(data.employeeTotal) || 0;
 
@@ -477,7 +513,11 @@ function validateData(data) {
   ) {
 
     throw new Error(
-      'ยอดพนักงานซื้อไม่ตรงกัน'
+      'ยอดพนักงานซื้อไม่ตรงกัน: ' +
+      'รวม ' +
+      employeeTotal +
+      ' ≠ เงินสด + QR ' +
+      employeeSum
     );
 
   }
@@ -485,28 +525,172 @@ function validateData(data) {
 }
 
 
-/**
+/****************************************************
+ * SHIFT
+ ****************************************************/
+
+function parseShifts(shift) {
+
+  if (Array.isArray(shift)) {
+
+    return shift
+      .map(function(value) {
+
+        return String(value).trim();
+
+      })
+      .filter(Boolean);
+
+  }
+
+
+  return String(
+    shift || ''
+  )
+    .split(',')
+    .map(function(value) {
+
+      return String(value).trim();
+
+    })
+    .filter(Boolean);
+
+}
+
+
+function normalizeShifts(shift) {
+
+  return parseShifts(
+    shift
+  ).join(', ');
+
+}
+
+
+/****************************************************
  * SAVE IMAGE
- */
+ *
+ * ROOT
+ * └── 2569
+ *     └── 08สิงหาคม
+ *
+ * ตัวอย่างชื่อ:
+ *
+ * 20260817_M85_09.00-14.00_14.00-18.00_ใบส่งยอด.jpg
+ ****************************************************/
+
 function saveImageToDrive(
   base64,
   fileName,
   mimeType,
   shop,
-  date
+  date,
+  shift
 ) {
 
-  const folder =
+  const rootFolder =
     DriveApp.getFolderById(
       CONFIG.DRIVE_FOLDER_ID
     );
 
 
-  const cleanBase64 =
-    base64.replace(
-      /^data:[^;]+;base64,/,
-      ''
+  const dateObj =
+    parseReportDate(
+      date
     );
+
+
+  if (!dateObj) {
+
+    throw new Error(
+      'รูปแบบวันที่ไม่ถูกต้อง: ' +
+      date
+    );
+
+  }
+
+
+  /**************************************************
+   * พ.ศ.
+   **************************************************/
+
+  const buddhistYear =
+    dateObj.getFullYear() +
+    543;
+
+
+  /**************************************************
+   * เดือน
+   **************************************************/
+
+  const month =
+    dateObj.getMonth();
+
+
+  const monthNames = [
+
+    'มกราคม',
+    'กุมภาพันธ์',
+    'มีนาคม',
+    'เมษายน',
+    'พฤษภาคม',
+    'มิถุนายน',
+    'กรกฎาคม',
+    'สิงหาคม',
+    'กันยายน',
+    'ตุลาคม',
+    'พฤศจิกายน',
+    'ธันวาคม'
+
+  ];
+
+
+  const monthNumber =
+    String(
+      month + 1
+    ).padStart(
+      2,
+      '0'
+    );
+
+
+  const monthFolderName =
+    monthNumber +
+    monthNames[month];
+
+
+  /**************************************************
+   * YEAR FOLDER
+   **************************************************/
+
+  const yearFolder =
+    getOrCreateFolder(
+      rootFolder,
+      String(buddhistYear)
+    );
+
+
+  /**************************************************
+   * MONTH FOLDER
+   **************************************************/
+
+  const monthFolder =
+    getOrCreateFolder(
+      yearFolder,
+      monthFolderName
+    );
+
+
+  /**************************************************
+   * BASE64
+   **************************************************/
+
+  const cleanBase64 =
+    String(base64)
+      .replace(
+        /^data:[^;]+;base64,/,
+        ''
+      );
 
 
   const bytes =
@@ -518,35 +702,233 @@ function saveImageToDrive(
   const blob =
     Utilities.newBlob(
       bytes,
-      mimeType,
-      fileName
+      mimeType || 'image/jpeg',
+      fileName || 'ใบส่งยอด.jpg'
     );
 
 
-  const timestamp =
-    Utilities.formatDate(
-      new Date(),
-      Session.getScriptTimeZone(),
-      'yyyyMMdd_HHmmss'
+  /**************************************************
+   * FILE NAME
+   **************************************************/
+
+  const yyyy =
+    dateObj.getFullYear();
+
+
+  const mm =
+    String(
+      dateObj.getMonth() + 1
+    ).padStart(
+      2,
+      '0'
     );
 
 
-  const finalName =
-    timestamp +
-    '_' +
-    shop +
-    '_' +
-    date +
-    '_' +
-    fileName;
+  const dd =
+    String(
+      dateObj.getDate()
+    ).padStart(
+      2,
+      '0'
+    );
 
+
+  const shiftName =
+    parseShifts(
+      shift
+    ).join('_');
+
+
+  const cleanShop =
+    sanitizeFileName(
+      shop ||
+      'ไม่ระบุร้าน'
+    );
+
+
+  const cleanOriginalName =
+    sanitizeFileName(
+      fileName ||
+      'ใบส่งยอด.jpg'
+    );
+
+
+  let finalName =
+    yyyy +
+    mm +
+    dd +
+    '_' +
+    cleanShop;
+
+
+  if (shiftName) {
+
+    finalName +=
+      '_' +
+      shiftName;
+
+  }
+
+
+  finalName +=
+    '_' +
+    cleanOriginalName;
+
+
+  /**************************************************
+   * CREATE FILE
+   **************************************************/
 
   const file =
-    folder.createFile(blob);
+    monthFolder.createFile(
+      blob
+    );
 
 
-  file.setName(finalName);
+  file.setName(
+    finalName
+  );
 
 
   return file.getUrl();
+
+}
+
+
+/****************************************************
+ * PARSE DATE
+ ****************************************************/
+
+function parseReportDate(date) {
+
+  if (
+    Object.prototype
+      .toString
+      .call(date) ===
+      '[object Date]'
+  ) {
+
+    return date;
+
+  }
+
+
+  const text =
+    String(date).trim();
+
+
+  /**************************************************
+   * YYYY-MM-DD
+   **************************************************/
+
+  const match =
+    text.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})$/
+    );
+
+
+  if (match) {
+
+    return new Date(
+
+      Number(match[1]),
+
+      Number(match[2]) - 1,
+
+      Number(match[3])
+
+    );
+
+  }
+
+
+  /**************************************************
+   * DD/MM/YYYY
+   **************************************************/
+
+  const match2 =
+    text.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+    );
+
+
+  if (match2) {
+
+    let year =
+      Number(match2[3]);
+
+
+    if (year > 2400) {
+
+      year -= 543;
+
+    }
+
+
+    return new Date(
+
+      year,
+
+      Number(match2[2]) - 1,
+
+      Number(match2[1])
+
+    );
+
+  }
+
+
+  return null;
+
+}
+
+
+/****************************************************
+ * GET / CREATE FOLDER
+ ****************************************************/
+
+function getOrCreateFolder(
+  parentFolder,
+  folderName
+) {
+
+  const folders =
+    parentFolder.getFoldersByName(
+      folderName
+    );
+
+
+  if (folders.hasNext()) {
+
+    return folders.next();
+
+  }
+
+
+  return parentFolder.createFolder(
+    folderName
+  );
+
+}
+
+
+/****************************************************
+ * CLEAN FILE NAME
+ ****************************************************/
+
+function sanitizeFileName(name) {
+
+  return String(
+    name || ''
+  )
+    .replace(
+      /[\\\/:*?"<>|]/g,
+      '_'
+    )
+    .replace(
+      /\s+/g,
+      ' '
+    )
+    .trim();
+
 }
