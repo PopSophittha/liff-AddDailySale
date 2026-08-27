@@ -686,31 +686,51 @@ function setToday() {
 
 function loadShops() {
 
-  runServer('getShops')
+  apiGet('getShops')
+
     .then(function(shops) {
 
       const select =
-        document.getElementById('shop');
+        document.getElementById(
+          'shop'
+        );
+
 
       select.innerHTML =
         '<option value="">-- เลือกร้าน --</option>';
 
-      shops.forEach(function(shop) {
 
-        const option =
-          document.createElement('option');
+      shops.forEach(
+        function(shop) {
 
-        option.value = shop;
-        option.textContent = shop;
+          const option =
+            document.createElement(
+              'option'
+            );
 
-        select.appendChild(option);
 
-      });
+          option.value =
+            shop;
+
+          option.textContent =
+            shop;
+
+
+          select.appendChild(
+            option
+          );
+
+        }
+      );
 
     })
+
     .catch(function(error) {
 
-      alert(error.message);
+      alert(
+        'โหลดรายชื่อร้านไม่ได้\n\n' +
+        error.message
+      );
 
     });
 
@@ -724,7 +744,10 @@ function loadShops() {
 function shopChanged() {
 
   const shop =
-    document.getElementById('shop').value;
+    document.getElementById(
+      'shop'
+    ).value;
+
 
   selectedEmployees = [];
 
@@ -738,11 +761,14 @@ function shopChanged() {
     ).innerText =
       'กรุณาเลือกร้านก่อน';
 
+
     document.getElementById(
       'employeeList'
     ).innerHTML = '';
 
+
     return;
+
   }
 
 
@@ -752,20 +778,30 @@ function shopChanged() {
     'กำลังโหลดรายชื่อพนักงาน...';
 
 
-  runServer(
+  apiGet(
     'getStaffByShop',
-    shop
+    {
+      shop: shop
+    }
   )
+
   .then(function(staff) {
 
-    currentEmployees = staff;
+    currentEmployees =
+      staff;
 
-    renderEmployees(staff);
+    renderEmployees(
+      staff
+    );
 
   })
+
   .catch(function(error) {
 
-    alert(error.message);
+    alert(
+      'โหลดพนักงานไม่ได้\n\n' +
+      error.message
+    );
 
   });
 
@@ -1269,10 +1305,7 @@ function submitForm() {
     .disabled = true;
 
 
-  runServer(
-    'saveSalesReport',
-    data
-  )
+  apiPost(data)
 
   .then(function(result) {
 
@@ -1407,29 +1440,201 @@ function escapeHtml(value) {
 
 }
 
-
 /****************************************************
- * GOOGLE APPS SCRIPT CALL
+ * GOOGLE APPS SCRIPT API
  ****************************************************/
 
-function runServer(functionName, ...args) {
+const API_URL =
+  'https://script.google.com/macros/s/AKfycbzCXzsvORwlVAsW9D76WzMY3ignrwT9mtd6SKNlxpD4oDMqt3Pbp4rLAzk-kwIbVHn_/exec';
+
+
+/****************************************************
+ * GET API - JSONP
+ ****************************************************/
+
+function apiGet(action, params = {}) {
 
   return new Promise(function(resolve, reject) {
 
-    google.script.run
-      .withSuccessHandler(resolve)
-      .withFailureHandler(function(error) {
+    const callbackName =
+      'jsonp_' +
+      Date.now() +
+      '_' +
+      Math.floor(
+        Math.random() * 100000
+      );
+
+
+    const query =
+      new URLSearchParams();
+
+
+    query.set(
+      'action',
+      action
+    );
+
+
+    query.set(
+      'callback',
+      callbackName
+    );
+
+
+    Object.keys(params)
+      .forEach(function(key) {
+
+        query.set(
+          key,
+          params[key]
+        );
+
+      });
+
+
+    const script =
+      document.createElement(
+        'script'
+      );
+
+
+    const timeout =
+      setTimeout(function() {
+
+        cleanup();
 
         reject(
           new Error(
-            error && error.message
-              ? error.message
-              : String(error)
+            'เชื่อมต่อ Google Apps Script ไม่สำเร็จ'
           )
         );
 
-      })
-      [functionName](...args);
+      }, 15000);
+
+
+    window[callbackName] =
+      function(result) {
+
+        clearTimeout(timeout);
+
+        cleanup();
+
+        if (
+          result &&
+          result.success
+        ) {
+
+          resolve(
+            result.data
+          );
+
+        }
+
+        else {
+
+          reject(
+            new Error(
+              result.message ||
+              'API Error'
+            )
+          );
+
+        }
+
+      };
+
+
+    function cleanup() {
+
+      delete window[
+        callbackName
+      ];
+
+      if (script.parentNode) {
+
+        script.parentNode
+          .removeChild(script);
+
+      }
+
+    }
+
+
+    script.src =
+      API_URL +
+      '?' +
+      query.toString();
+
+
+    script.onerror =
+      function() {
+
+        clearTimeout(timeout);
+
+        cleanup();
+
+        reject(
+          new Error(
+            'ไม่สามารถเชื่อมต่อ Google Apps Script'
+          )
+        );
+
+      };
+
+
+    document.body.appendChild(
+      script
+    );
+
+  });
+
+}
+
+
+/****************************************************
+ * POST API
+ ****************************************************/
+
+function apiPost(data) {
+
+  return new Promise(function(
+    resolve,
+    reject
+  ) {
+
+    try {
+
+      fetch(
+        API_URL,
+        {
+          method: 'POST',
+
+          body:
+            JSON.stringify(data),
+
+          mode: 'no-cors'
+        }
+      );
+
+
+      /**
+       * no-cors จะอ่าน response ไม่ได้
+       *
+       * ดังนั้นให้ถือว่าส่งสำเร็จ
+       * หลังจาก request ถูกส่งออก
+       */
+
+      resolve({
+        success: true
+      });
+
+    }
+
+    catch (error) {
+
+      reject(error);
+
+    }
 
   });
 
