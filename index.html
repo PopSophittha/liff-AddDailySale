@@ -1,16 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 
 <head>
 
-  <base target="_top">
+  <meta charset="UTF-8">
 
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  >
 
   <title>รายงานยอดขาย</title>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
 
   <style>
 
@@ -25,15 +28,18 @@
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
+        Arial,
         sans-serif;
       color: #222;
     }
+
 
     .container {
       max-width: 600px;
       margin: auto;
       padding: 16px;
     }
+
 
     .header {
       background: #06c755;
@@ -43,15 +49,25 @@
       margin-bottom: 15px;
     }
 
+
     .header h1 {
       margin: 0;
       font-size: 24px;
     }
 
+
     .header p {
-      margin: 5px 0 0;
+      margin: 6px 0 0;
       opacity: .9;
     }
+
+
+    .user-info {
+      margin-top: 10px;
+      font-size: 13px;
+      opacity: .9;
+    }
+
 
     .card {
       background: white;
@@ -61,11 +77,13 @@
       box-shadow: 0 2px 10px rgba(0,0,0,.05);
     }
 
+
     .section-title {
       font-size: 18px;
       font-weight: 700;
-      margin-bottom: 14px;
+      margin-bottom: 15px;
     }
+
 
     label {
       display: block;
@@ -73,6 +91,7 @@
       font-weight: 600;
       margin-bottom: 6px;
     }
+
 
     input,
     select {
@@ -87,10 +106,12 @@
       outline: none;
     }
 
+
     input:focus,
     select:focus {
       border-color: #06c755;
     }
+
 
     .money-row {
       display: grid;
@@ -98,27 +119,34 @@
       gap: 10px;
     }
 
+
+    /* EMPLOYEE */
+
     .employee-selector {
       border: 1px solid #ddd;
       border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 10px;
+      padding: 14px;
+      min-height: 48px;
       cursor: pointer;
       background: white;
+      margin-bottom: 8px;
     }
+
 
     .employee-list {
       display: none;
       border: 1px solid #ddd;
       border-radius: 12px;
-      margin-top: -4px;
       margin-bottom: 14px;
       overflow: hidden;
+      background: white;
     }
+
 
     .employee-list.show {
       display: block;
     }
+
 
     .employee-item {
       display: flex;
@@ -129,66 +157,92 @@
       cursor: pointer;
     }
 
+
     .employee-item:last-child {
       border-bottom: none;
     }
+
 
     .employee-item input {
       width: 20px;
       height: 20px;
       margin: 0;
+      flex-shrink: 0;
     }
+
+
+    .employee-item label {
+      flex: 1;
+      margin: 0;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
 
     .selected-employees {
       font-size: 14px;
       color: #555;
-      margin-bottom: 14px;
+      line-height: 1.6;
     }
+
+
+    /* CHECK */
 
     .check-box {
       padding: 12px;
       border-radius: 12px;
       background: #f4fff7;
       border: 1px solid #c7efd4;
-      margin-bottom: 14px;
+      margin-bottom: 5px;
       font-size: 14px;
     }
 
-    .check-box.error {
-      background: #fff4f4;
-      border-color: #ffcaca;
-      color: #d00;
-    }
 
     .check-box.ok {
       color: #087f35;
     }
+
+
+    .check-box.error {
+      background: #fff4f4;
+      border-color: #ffcaca;
+      color: #d00000;
+    }
+
+
+    /* PHOTO */
 
     .photo-box {
       border: 2px dashed #ccc;
       border-radius: 14px;
       padding: 20px;
       text-align: center;
-      margin-bottom: 14px;
+      margin-bottom: 0;
       cursor: pointer;
+      display: block;
     }
+
 
     .photo-box input {
       display: none;
     }
 
+
     .photo-preview {
       width: 100%;
-      max-height: 300px;
+      max-height: 350px;
       object-fit: contain;
       border-radius: 12px;
       display: none;
-      margin-top: 10px;
+      margin-top: 12px;
     }
+
+
+    /* BUTTON */
 
     .submit-btn {
       width: 100%;
-      height: 54px;
+      height: 56px;
       border: none;
       border-radius: 15px;
       background: #06c755;
@@ -196,26 +250,33 @@
       font-size: 18px;
       font-weight: 700;
       cursor: pointer;
+      margin-bottom: 20px;
     }
+
 
     .submit-btn:disabled {
       opacity: .5;
     }
 
+
+    /* LOADING */
+
     .loading {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(255,255,255,.85);
-      z-index: 999;
+      background: rgba(255,255,255,.88);
+      z-index: 9999;
       align-items: center;
       justify-content: center;
       flex-direction: column;
     }
 
+
     .loading.show {
       display: flex;
     }
+
 
     .spinner {
       width: 45px;
@@ -227,27 +288,35 @@
       margin-bottom: 15px;
     }
 
+
     @keyframes spin {
+
       to {
         transform: rotate(360deg);
       }
+
     }
 
-    .user-info {
-      font-size: 13px;
-      opacity: .85;
-      margin-top: 10px;
+
+    .required {
+      color: #d00;
     }
 
-    .amount-summary {
-      display: flex;
-      justify-content: space-between;
-      padding: 5px 0;
-      font-size: 14px;
-    }
 
-    .amount-summary strong {
-      font-size: 16px;
+    @media (max-width: 400px) {
+
+      .container {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 15px;
+      }
+
+      .money-row {
+        gap: 7px;
+      }
+
     }
 
   </style>
@@ -257,11 +326,17 @@
 
 <body>
 
-<div class="loading" id="loading">
+
+<!-- LOADING -->
+
+<div
+  class="loading"
+  id="loading"
+>
 
   <div class="spinner"></div>
 
-  <div>
+  <div id="loadingText">
     กำลังบันทึกข้อมูล...
   </div>
 
@@ -270,20 +345,30 @@
 
 <div class="container">
 
+
+  <!-- HEADER -->
+
   <div class="header">
 
-    <h1>รายงานยอดขาย</h1>
+    <h1>
+      รายงานยอดขาย
+    </h1>
 
-    <p>กรอกยอดขายประจำวัน</p>
+    <p>
+      กรอกยอดขายประจำวัน
+    </p>
 
-    <div class="user-info" id="userInfo">
+    <div
+      class="user-info"
+      id="userInfo"
+    >
       กำลังโหลดข้อมูล LINE...
     </div>
 
   </div>
 
 
-  <!-- ร้าน / วันที่ / กะ -->
+  <!-- ข้อมูลรายงาน -->
 
   <div class="card">
 
@@ -291,10 +376,15 @@
       📋 ข้อมูลรายงาน
     </div>
 
-    <label>ร้าน</label>
 
-    <select id="shop"
-            onchange="shopChanged()">
+    <label>
+      ร้าน <span class="required">*</span>
+    </label>
+
+    <select
+      id="shop"
+      onchange="shopChanged()"
+    >
 
       <option value="">
         กำลังโหลด...
@@ -303,7 +393,9 @@
     </select>
 
 
-    <label>วันที่</label>
+    <label>
+      วันที่ <span class="required">*</span>
+    </label>
 
     <input
       type="date"
@@ -311,7 +403,9 @@
     >
 
 
-    <label>กะ</label>
+    <label>
+      กะ <span class="required">*</span>
+    </label>
 
     <select id="shift">
 
@@ -344,30 +438,34 @@
       👥 พนักงาน
     </div>
 
+
     <label>
       เลือกพนักงาน
+      <span class="required">*</span>
     </label>
+
 
     <div
       class="employee-selector"
+      id="employeeSelector"
       onclick="toggleEmployees()"
-      id="employeeSelector">
-
-      กำลังเลือกร้าน...
-
+    >
+      กรุณาเลือกร้านก่อน
     </div>
+
 
     <div
       class="employee-list"
-      id="employeeList">
+      id="employeeList"
+    >
     </div>
+
 
     <div
       class="selected-employees"
-      id="selectedEmployees">
-
+      id="selectedEmployees"
+    >
       ยังไม่ได้เลือกพนักงาน
-
     </div>
 
   </div>
@@ -381,8 +479,9 @@
       💰 ยอดขาย
     </div>
 
+
     <label>
-      รวมยอดขาย
+      รวมยอดขาย <span class="required">*</span>
     </label>
 
     <input
@@ -391,6 +490,7 @@
       placeholder="0"
       min="0"
       step="0.01"
+      inputmode="decimal"
       oninput="checkSales()"
     >
 
@@ -399,7 +499,9 @@
 
       <div>
 
-        <label>เงินสด</label>
+        <label>
+          เงินสด
+        </label>
 
         <input
           type="number"
@@ -407,6 +509,7 @@
           placeholder="0"
           min="0"
           step="0.01"
+          inputmode="decimal"
           oninput="checkSales()"
         >
 
@@ -415,7 +518,9 @@
 
       <div>
 
-        <label>เครดิต</label>
+        <label>
+          เครดิต
+        </label>
 
         <input
           type="number"
@@ -423,6 +528,7 @@
           placeholder="0"
           min="0"
           step="0.01"
+          inputmode="decimal"
           oninput="checkSales()"
         >
 
@@ -441,16 +547,16 @@
       placeholder="0"
       min="0"
       step="0.01"
+      inputmode="decimal"
       oninput="checkSales()"
     >
 
 
     <div
       class="check-box"
-      id="salesCheck">
-
+      id="salesCheck"
+    >
       กรุณากรอกยอดขาย
-
     </div>
 
   </div>
@@ -464,6 +570,7 @@
       🛍️ ยอดพนักงานซื้อ
     </div>
 
+
     <label>
       รวมพนักงานซื้อ
     </label>
@@ -474,6 +581,7 @@
       placeholder="0"
       min="0"
       step="0.01"
+      inputmode="decimal"
       oninput="checkEmployeeSales()"
     >
 
@@ -492,6 +600,7 @@
           placeholder="0"
           min="0"
           step="0.01"
+          inputmode="decimal"
           oninput="checkEmployeeSales()"
         >
 
@@ -501,7 +610,7 @@
       <div>
 
         <label>
-          พนักงาน QR
+          พนักงาน คิวอาร์โค้ด
         </label>
 
         <input
@@ -510,6 +619,7 @@
           placeholder="0"
           min="0"
           step="0.01"
+          inputmode="decimal"
           oninput="checkEmployeeSales()"
         >
 
@@ -520,10 +630,9 @@
 
     <div
       class="check-box"
-      id="employeeCheck">
-
+      id="employeeCheck"
+    >
       กรุณากรอกยอดพนักงานซื้อ
-
     </div>
 
   </div>
@@ -537,6 +646,7 @@
       📱 ยอดขายซิม
     </div>
 
+
     <label>
       ยอดขายซิม
     </label>
@@ -547,6 +657,7 @@
       placeholder="0"
       min="0"
       step="0.01"
+      inputmode="decimal"
     >
 
   </div>
@@ -560,6 +671,7 @@
       📷 ใบส่งยอด
     </div>
 
+
     <label class="photo-box">
 
       <input
@@ -570,13 +682,23 @@
         onchange="photoSelected(event)"
       >
 
+
       <div id="photoText">
 
-        📷<br>
-        แตะเพื่อถ่ายรูป<br>
-        <small>หรือเลือกรูปจากเครื่อง</small>
+        📷
+
+        <br>
+
+        แตะเพื่อถ่ายรูป
+
+        <br>
+
+        <small>
+          หรือเลือกรูปจากเครื่อง
+        </small>
 
       </div>
+
 
       <img
         id="photoPreview"
@@ -588,112 +710,225 @@
   </div>
 
 
-  <!-- Submit -->
+  <!-- SUBMIT -->
 
   <button
     class="submit-btn"
     id="submitBtn"
-    onclick="submitForm()">
-
+    onclick="submitForm()"
+  >
     ส่งรายงานยอดขาย
-
   </button>
+
 
 </div>
 
 
+
 <script>
 
+/****************************************************
+ * CONFIG
+ ****************************************************/
+
+/*
+ * ================================
+ * ใส่ LIFF ID ของคุณตรงนี้
+ * ================================
+ *
+ * ตัวอย่าง:
+ *
+ * const LIFF_ID =
+ *   '2001234567-AbCdEfGh';
+ *
+ */
+
+const LIFF_ID =
+  '2007788493-ViOpm5bx';
+
+
+/*
+ * Google Apps Script Web App
+ *
+ * URL ของคุณ
+ */
+
+const API_URL =
+  'https://script.google.com/macros/s/AKfycbzCXzsvORwlVAsW9D76WzMY3ignrwT9mtd6SKNlxpD4oDMqt3Pbp4rLAzk-kwIbVHn_/exec';
+
+
+
+/****************************************************
+ * VARIABLES
+ ****************************************************/
+
 let lineProfile = null;
+
 let currentEmployees = [];
+
 let selectedEmployees = [];
+
 let imageData = null;
+
 
 
 /****************************************************
  * INIT
  ****************************************************/
 
-window.onload = async function() {
+window.addEventListener(
+  'load',
+  init
+);
+
+
+async function init() {
 
   setToday();
 
+
   try {
 
-    const config = await runServer('getConfig');
+    if (
+      !LIFF_ID ||
+      LIFF_ID ===
+        'ใส่-LIFF-ID-ตรงนี้'
+    ) {
+
+      throw new Error(
+        'ยังไม่ได้ใส่ LIFF ID ใน index.html'
+      );
+
+    }
+
+
+    /*
+     * INIT LIFF
+     */
 
     await liff.init({
-      liffId: config.liffId
+      liffId: LIFF_ID
     });
 
 
-    if (!liff.isLoggedIn()) {
+    /*
+     * LOGIN
+     */
+
+    if (
+      !liff.isLoggedIn()
+    ) {
 
       liff.login();
 
       return;
+
     }
 
 
-    lineProfile = await liff.getProfile();
+    /*
+     * GET PROFILE
+     */
+
+    lineProfile =
+      await liff.getProfile();
 
 
-    document.getElementById('userInfo').innerText =
-      'ผู้ส่ง: ' + lineProfile.displayName;
+    document
+      .getElementById(
+        'userInfo'
+      )
+      .innerText =
+        'ผู้ส่ง: ' +
+        lineProfile.displayName;
 
+
+    /*
+     * LOAD SHOPS
+     */
 
     loadShops();
 
   }
 
+
   catch (error) {
 
     console.error(error);
+
 
     alert(
       'ไม่สามารถเปิดระบบได้\n\n' +
       error.message
     );
+
   }
 
-};
+}
+
 
 
 /****************************************************
- * SET TODAY
+ * DATE
  ****************************************************/
 
 function setToday() {
 
-  const now = new Date();
+  const now =
+    new Date();
 
-  const year = now.getFullYear();
+
+  const year =
+    now.getFullYear();
+
 
   const month =
-    String(now.getMonth() + 1).padStart(2, '0');
+    String(
+      now.getMonth() + 1
+    ).padStart(
+      2,
+      '0'
+    );
+
 
   const day =
-    String(now.getDate()).padStart(2, '0');
+    String(
+      now.getDate()
+    ).padStart(
+      2,
+      '0'
+    );
 
-  document.getElementById('date').value =
-    `${year}-${month}-${day}`;
+
+  document
+    .getElementById(
+      'date'
+    )
+    .value =
+      `${year}-${month}-${day}`;
+
 }
 
 
+
 /****************************************************
- * LOAD SHOPS
+ * GET SHOPS
  ****************************************************/
 
 function loadShops() {
 
-  apiGet('getShops')
+  apiGet(
+    'getShops'
+  )
 
-    .then(function(shops) {
+  .then(
+    function(shops) {
 
       const select =
-        document.getElementById(
-          'shop'
-        );
+        document
+          .getElementById(
+            'shop'
+          );
 
 
       select.innerHTML =
@@ -712,6 +947,7 @@ function loadShops() {
           option.value =
             shop;
 
+
           option.textContent =
             shop;
 
@@ -723,18 +959,22 @@ function loadShops() {
         }
       );
 
-    })
+    }
+  )
 
-    .catch(function(error) {
+  .catch(
+    function(error) {
 
       alert(
         'โหลดรายชื่อร้านไม่ได้\n\n' +
         error.message
       );
 
-    });
+    }
+  );
 
 }
+
 
 
 /****************************************************
@@ -744,27 +984,45 @@ function loadShops() {
 function shopChanged() {
 
   const shop =
-    document.getElementById(
-      'shop'
-    ).value;
+    document
+      .getElementById(
+        'shop'
+      )
+      .value;
 
 
   selectedEmployees = [];
 
+
+  currentEmployees = [];
+
+
   updateSelectedEmployees();
+
+
+  const list =
+    document
+      .getElementById(
+        'employeeList'
+      );
+
+
+  list.innerHTML = '';
+
+
+  list.classList.remove(
+    'show'
+  );
 
 
   if (!shop) {
 
-    document.getElementById(
-      'employeeSelector'
-    ).innerText =
-      'กรุณาเลือกร้านก่อน';
-
-
-    document.getElementById(
-      'employeeList'
-    ).innerHTML = '';
+    document
+      .getElementById(
+        'employeeSelector'
+      )
+      .innerText =
+        'กรุณาเลือกร้านก่อน';
 
 
     return;
@@ -772,10 +1030,12 @@ function shopChanged() {
   }
 
 
-  document.getElementById(
-    'employeeSelector'
-  ).innerText =
-    'กำลังโหลดรายชื่อพนักงาน...';
+  document
+    .getElementById(
+      'employeeSelector'
+    )
+    .innerText =
+      'กำลังโหลดรายชื่อพนักงาน...';
 
 
   apiGet(
@@ -785,97 +1045,156 @@ function shopChanged() {
     }
   )
 
-  .then(function(staff) {
+  .then(
+    function(staff) {
 
-    currentEmployees =
-      staff;
+      currentEmployees =
+        staff;
 
-    renderEmployees(
-      staff
-    );
 
-  })
+      renderEmployees(
+        staff
+      );
 
-  .catch(function(error) {
+    }
+  )
 
-    alert(
-      'โหลดพนักงานไม่ได้\n\n' +
-      error.message
-    );
+  .catch(
+    function(error) {
 
-  });
+      alert(
+        'โหลดพนักงานไม่ได้\n\n' +
+        error.message
+      );
+
+    }
+  );
 
 }
+
 
 
 /****************************************************
  * RENDER EMPLOYEES
  ****************************************************/
 
-function renderEmployees(staff) {
+function renderEmployees(
+  staff
+) {
 
   const list =
-    document.getElementById('employeeList');
+    document
+      .getElementById(
+        'employeeList'
+      );
+
 
   list.innerHTML = '';
 
 
-  if (!staff.length) {
+  if (
+    !staff ||
+    !staff.length
+  ) {
 
     list.innerHTML =
       '<div style="padding:15px;">' +
       'ไม่พบรายชื่อพนักงานของร้านนี้' +
       '</div>';
 
+
     return;
+
   }
 
 
-  staff.forEach(function(name, index) {
+  staff.forEach(
+    function(name, index) {
 
-    const row =
-      document.createElement('div');
-
-    row.className =
-      'employee-item';
-
-
-    row.innerHTML = `
-
-      <input
-        type="checkbox"
-        id="staff_${index}"
-        value="${escapeHtml(name)}"
-        onchange="employeeChanged()"
-      >
-
-      <label
-        for="staff_${index}"
-        style="margin:0; flex:1; cursor:pointer;">
-
-        ${escapeHtml(name)}
-
-      </label>
-
-    `;
+      const row =
+        document.createElement(
+          'div'
+        );
 
 
-    list.appendChild(row);
-
-  });
-
-
-  document.getElementById(
-    'employeeSelector'
-  ).innerText =
-    'แตะเพื่อเลือกพนักงาน';
+      row.className =
+        'employee-item';
 
 
-  document.getElementById(
-    'employeeList'
-  ).classList.add('show');
+      const checkbox =
+        document.createElement(
+          'input'
+        );
+
+
+      checkbox.type =
+        'checkbox';
+
+
+      checkbox.id =
+        'staff_' + index;
+
+
+      checkbox.value =
+        name;
+
+
+      checkbox.addEventListener(
+        'change',
+        employeeChanged
+      );
+
+
+      const label =
+        document.createElement(
+          'label'
+        );
+
+
+      label.htmlFor =
+        checkbox.id;
+
+
+      label.textContent =
+        name;
+
+
+      row.appendChild(
+        checkbox
+      );
+
+
+      row.appendChild(
+        label
+      );
+
+
+      list.appendChild(
+        row
+      );
+
+    }
+  );
+
+
+  document
+    .getElementById(
+      'employeeSelector'
+    )
+    .innerText =
+      'แตะเพื่อเลือกพนักงาน';
+
+
+  /*
+   * เปิดรายการทันที
+   */
+
+  list.classList.add(
+    'show'
+  );
 
 }
+
 
 
 /****************************************************
@@ -885,11 +1204,27 @@ function renderEmployees(staff) {
 function toggleEmployees() {
 
   const list =
-    document.getElementById('employeeList');
+    document
+      .getElementById(
+        'employeeList'
+      );
 
-  list.classList.toggle('show');
+
+  if (
+    !currentEmployees.length
+  ) {
+
+    return;
+
+  }
+
+
+  list.classList.toggle(
+    'show'
+  );
 
 }
+
 
 
 /****************************************************
@@ -907,17 +1242,21 @@ function employeeChanged() {
   selectedEmployees = [];
 
 
-  checkboxes.forEach(function(cb) {
+  checkboxes.forEach(
+    function(cb) {
 
-    if (cb.checked) {
+      if (
+        cb.checked
+      ) {
 
-      selectedEmployees.push(
-        cb.value
-      );
+        selectedEmployees.push(
+          cb.value
+        );
+
+      }
 
     }
-
-  });
+  );
 
 
   updateSelectedEmployees();
@@ -925,29 +1264,47 @@ function employeeChanged() {
 }
 
 
+
 /****************************************************
- * UPDATE SELECTED
+ * UPDATE EMPLOYEES
  ****************************************************/
 
 function updateSelectedEmployees() {
 
   const box =
-    document.getElementById(
-      'selectedEmployees'
-    );
+    document
+      .getElementById(
+        'selectedEmployees'
+      );
 
 
-  if (!selectedEmployees.length) {
+  const selector =
+    document
+      .getElementById(
+        'employeeSelector'
+      );
+
+
+  if (
+    !selectedEmployees.length
+  ) {
 
     box.innerText =
       'ยังไม่ได้เลือกพนักงาน';
 
-    document.getElementById(
-      'employeeSelector'
-    ).innerText =
-      'แตะเพื่อเลือกพนักงาน';
+
+    if (
+      currentEmployees.length
+    ) {
+
+      selector.innerText =
+        'แตะเพื่อเลือกพนักงาน';
+
+    }
+
 
     return;
+
   }
 
 
@@ -955,17 +1312,18 @@ function updateSelectedEmployees() {
     'เลือกแล้ว ' +
     selectedEmployees.length +
     ' คน: ' +
-    selectedEmployees.join(', ');
+    selectedEmployees.join(
+      ', '
+    );
 
 
-  document.getElementById(
-    'employeeSelector'
-  ).innerText =
+  selector.innerText =
     'เลือกพนักงานแล้ว ' +
     selectedEmployees.length +
     ' คน';
 
 }
+
 
 
 /****************************************************
@@ -975,47 +1333,73 @@ function updateSelectedEmployees() {
 function checkSales() {
 
   const total =
-    number('totalSales');
-
-  const cash =
-    number('cash');
-
-  const credit =
-    number('credit');
-
-  const qr =
-    number('qr');
-
-
-  const sum =
-    cash + credit + qr;
-
-
-  const box =
-    document.getElementById(
-      'salesCheck'
+    getNumber(
+      'totalSales'
     );
 
 
-  if (!total && !sum) {
+  const cash =
+    getNumber(
+      'cash'
+    );
+
+
+  const credit =
+    getNumber(
+      'credit'
+    );
+
+
+  const qr =
+    getNumber(
+      'qr'
+    );
+
+
+  const sum =
+    cash +
+    credit +
+    qr;
+
+
+  const box =
+    document
+      .getElementById(
+        'salesCheck'
+      );
+
+
+  if (
+    !total &&
+    !sum
+  ) {
 
     box.className =
       'check-box';
 
+
     box.innerText =
       'กรุณากรอกยอดขาย';
 
+
     return false;
+
   }
 
 
-  if (Math.abs(total - sum) < 0.01) {
+  if (
+    Math.abs(
+      total - sum
+    ) < 0.01
+  ) {
 
     box.className =
       'check-box ok';
 
+
     box.innerText =
       '✓ ยอดขายถูกต้อง';
+
 
     return true;
 
@@ -1025,15 +1409,18 @@ function checkSales() {
   box.className =
     'check-box error';
 
+
   box.innerText =
     'ยอดไม่ตรงกัน: ' +
     money(total) +
     ' ≠ ' +
     money(sum);
 
+
   return false;
 
 }
+
 
 
 /****************************************************
@@ -1043,45 +1430,66 @@ function checkSales() {
 function checkEmployeeSales() {
 
   const total =
-    number('employeeTotal');
-
-  const cash =
-    number('employeeCash');
-
-  const qr =
-    number('employeeQr');
-
-
-  const sum =
-    cash + qr;
-
-
-  const box =
-    document.getElementById(
-      'employeeCheck'
+    getNumber(
+      'employeeTotal'
     );
 
 
-  if (!total && !sum) {
+  const cash =
+    getNumber(
+      'employeeCash'
+    );
+
+
+  const qr =
+    getNumber(
+      'employeeQr'
+    );
+
+
+  const sum =
+    cash +
+    qr;
+
+
+  const box =
+    document
+      .getElementById(
+        'employeeCheck'
+      );
+
+
+  if (
+    !total &&
+    !sum
+  ) {
 
     box.className =
       'check-box';
 
+
     box.innerText =
       'กรุณากรอกยอดพนักงานซื้อ';
+
 
     return false;
 
   }
 
 
-  if (Math.abs(total - sum) < 0.01) {
+  if (
+    Math.abs(
+      total - sum
+    ) < 0.01
+  ) {
 
     box.className =
       'check-box ok';
 
+
     box.innerText =
       '✓ ยอดพนักงานซื้อถูกต้อง';
+
 
     return true;
 
@@ -1091,28 +1499,56 @@ function checkEmployeeSales() {
   box.className =
     'check-box error';
 
+
   box.innerText =
     'ยอดไม่ตรงกัน: ' +
     money(total) +
     ' ≠ ' +
     money(sum);
 
+
   return false;
 
 }
+
 
 
 /****************************************************
  * PHOTO
  ****************************************************/
 
-function photoSelected(event) {
+function photoSelected(
+  event
+) {
 
   const file =
     event.target.files[0];
 
+
   if (!file) {
+
     return;
+
+  }
+
+
+  /*
+   * จำกัดชนิดไฟล์
+   */
+
+  if (
+    !file.type.startsWith(
+      'image/'
+    )
+  ) {
+
+    alert(
+      'กรุณาเลือกไฟล์รูปภาพ'
+    );
+
+
+    return;
+
   }
 
 
@@ -1120,129 +1556,207 @@ function photoSelected(event) {
     new FileReader();
 
 
-  reader.onload = function(e) {
+  reader.onload =
+    function(e) {
 
-    imageData = {
+      imageData = {
 
-      data: e.target.result,
+        data:
+          e.target.result,
 
-      name: file.name,
+        name:
+          file.name,
 
-      mimeType: file.type
+        mimeType:
+          file.type
+
+      };
+
+
+      const preview =
+        document
+          .getElementById(
+            'photoPreview'
+          );
+
+
+      preview.src =
+        e.target.result;
+
+
+      preview.style.display =
+        'block';
+
+
+      document
+        .getElementById(
+          'photoText'
+        )
+        .innerHTML =
+          '✓ เลือกรูปแล้ว';
 
     };
 
 
-    const preview =
-      document.getElementById(
-        'photoPreview'
-      );
-
-
-    preview.src =
-      e.target.result;
-
-    preview.style.display =
-      'block';
-
-
-    document.getElementById(
-      'photoText'
-    ).innerHTML =
-      '✓ เลือกรูปแล้ว';
-
-  };
-
-
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(
+    file
+  );
 
 }
+
 
 
 /****************************************************
  * SUBMIT
  ****************************************************/
 
-function submitForm() {
+async function submitForm() {
 
   const shop =
-    document.getElementById('shop').value;
+    document
+      .getElementById(
+        'shop'
+      )
+      .value;
+
 
   const date =
-    document.getElementById('date').value;
+    document
+      .getElementById(
+        'date'
+      )
+      .value;
+
 
   const shift =
-    document.getElementById('shift').value;
+    document
+      .getElementById(
+        'shift'
+      )
+      .value;
 
+
+  /*
+   * CHECK SHOP
+   */
 
   if (!shop) {
 
-    alert('กรุณาเลือกร้าน');
+    alert(
+      'กรุณาเลือกร้าน'
+    );
+
 
     return;
 
   }
 
+
+  /*
+   * CHECK DATE
+   */
 
   if (!date) {
 
-    alert('กรุณาเลือกวันที่');
+    alert(
+      'กรุณาเลือกวันที่'
+    );
+
 
     return;
 
   }
 
+
+  /*
+   * CHECK SHIFT
+   */
 
   if (!shift) {
 
-    alert('กรุณาเลือกกะ');
+    alert(
+      'กรุณาเลือกกะ'
+    );
+
 
     return;
 
   }
 
 
-  if (!selectedEmployees.length) {
+  /*
+   * CHECK EMPLOYEE
+   */
 
-    alert('กรุณาเลือกพนักงานอย่างน้อย 1 คน');
+  if (
+    !selectedEmployees.length
+  ) {
+
+    alert(
+      'กรุณาเลือกพนักงานอย่างน้อย 1 คน'
+    );
+
 
     return;
 
   }
 
+
+  /*
+   * CHECK SALES
+   */
 
   if (!checkSales()) {
 
     alert(
-      'กรุณาตรวจสอบยอดขาย\n' +
-      'เงินสด + เครดิต + QR ต้องเท่ากับรวมยอดขาย'
+      'กรุณาตรวจสอบยอดขาย\n\n' +
+      'เงินสด + เครดิต + QR ' +
+      'ต้องเท่ากับรวมยอดขาย'
     );
+
 
     return;
 
   }
 
+
+  /*
+   * CHECK EMPLOYEE SALES
+   */
 
   if (!checkEmployeeSales()) {
 
     alert(
-      'กรุณาตรวจสอบยอดพนักงานซื้อ\n' +
-      'เงินสด + QR ต้องเท่ากับรวมพนักงานซื้อ'
+      'กรุณาตรวจสอบยอดพนักงานซื้อ\n\n' +
+      'เงินสด + QR ' +
+      'ต้องเท่ากับรวมพนักงานซื้อ'
     );
+
 
     return;
 
   }
 
+
+  /*
+   * CHECK IMAGE
+   */
 
   if (!imageData) {
 
-    alert('กรุณาแนบรูปใบส่งยอด');
+    alert(
+      'กรุณาแนบรูปใบส่งยอด'
+    );
+
 
     return;
 
   }
 
+
+  /*
+   * DATA
+   */
 
   const data = {
 
@@ -1251,43 +1765,76 @@ function submitForm() {
         ? lineProfile.userId
         : '',
 
+
     lineName:
       lineProfile
         ? lineProfile.displayName
         : '',
 
-    shop: shop,
 
-    date: date,
+    shop:
+      shop,
 
-    shift: shift,
+
+    date:
+      date,
+
+
+    shift:
+      shift,
+
 
     totalSales:
-      number('totalSales'),
+      getNumber(
+        'totalSales'
+      ),
+
 
     cash:
-      number('cash'),
+      getNumber(
+        'cash'
+      ),
+
 
     credit:
-      number('credit'),
+      getNumber(
+        'credit'
+      ),
+
 
     qr:
-      number('qr'),
+      getNumber(
+        'qr'
+      ),
+
 
     employeeTotal:
-      number('employeeTotal'),
+      getNumber(
+        'employeeTotal'
+      ),
+
 
     employeeCash:
-      number('employeeCash'),
+      getNumber(
+        'employeeCash'
+      ),
+
 
     employeeQr:
-      number('employeeQr'),
+      getNumber(
+        'employeeQr'
+      ),
+
 
     simSales:
-      number('simSales'),
+      getNumber(
+        'simSales'
+      ),
+
 
     employees:
       selectedEmployees,
+
 
     image:
       imageData
@@ -1295,29 +1842,40 @@ function submitForm() {
   };
 
 
-  document
-    .getElementById('loading')
-    .classList.add('show');
+  /*
+   * LOADING
+   */
+
+  showLoading(
+    'กำลังส่งข้อมูล...'
+  );
 
 
   document
-    .getElementById('submitBtn')
+    .getElementById(
+      'submitBtn'
+    )
     .disabled = true;
 
 
-  apiPost(data)
+  try {
 
-  .then(function(result) {
+    await apiPost(
+      data
+    );
 
-    document
-      .getElementById('loading')
-      .classList.remove('show');
+
+    hideLoading();
 
 
     alert(
       '✓ ส่งรายงานเรียบร้อยแล้ว'
     );
 
+
+    /*
+     * ปิด LIFF
+     */
 
     if (
       typeof liff !== 'undefined' &&
@@ -1334,17 +1892,18 @@ function submitForm() {
 
     }
 
-  })
+  }
 
-  .catch(function(error) {
+
+  catch (error) {
+
+    hideLoading();
+
 
     document
-      .getElementById('loading')
-      .classList.remove('show');
-
-
-    document
-      .getElementById('submitBtn')
+      .getElementById(
+        'submitBtn'
+      )
       .disabled = false;
 
 
@@ -1353,9 +1912,10 @@ function submitForm() {
       error.message
     );
 
-  });
+  }
 
 }
+
 
 
 /****************************************************
@@ -1364,283 +1924,436 @@ function submitForm() {
 
 function resetForm() {
 
-  document
-    .getElementById('totalSales')
-    .value = '';
+  [
+    'totalSales',
+    'cash',
+    'credit',
+    'qr',
+    'employeeTotal',
+    'employeeCash',
+    'employeeQr',
+    'simSales'
+  ]
+  .forEach(
+    function(id) {
 
-  document
-    .getElementById('cash')
-    .value = '';
+      document
+        .getElementById(id)
+        .value = '';
 
-  document
-    .getElementById('credit')
-    .value = '';
+    }
+  );
 
-  document
-    .getElementById('qr')
-    .value = '';
-
-  document
-    .getElementById('employeeTotal')
-    .value = '';
-
-  document
-    .getElementById('employeeCash')
-    .value = '';
-
-  document
-    .getElementById('employeeQr')
-    .value = '';
-
-  document
-    .getElementById('simSales')
-    .value = '';
 
   selectedEmployees = [];
 
-  updateSelectedEmployees();
 
   imageData = null;
+
+
+  document
+    .getElementById(
+      'photo'
+    )
+    .value = '';
+
+
+  document
+    .getElementById(
+      'photoPreview'
+    )
+    .style.display =
+      'none';
+
+
+  document
+    .getElementById(
+      'photoText'
+    )
+    .innerHTML =
+      '📷<br>แตะเพื่อถ่ายรูป<br>' +
+      '<small>หรือเลือกรูปจากเครื่อง</small>';
+
+
+  updateSelectedEmployees();
+
+
+  document
+    .getElementById(
+      'submitBtn'
+    )
+    .disabled = false;
+
+
+  checkSales();
+
+
+  checkEmployeeSales();
 
 }
 
 
+
 /****************************************************
- * HELPERS
+ * API GET
+ *
+ * ใช้ JSONP
+ *
+ * เพราะหน้าเว็บอยู่ GitHub Pages
  ****************************************************/
 
-function number(id) {
+function apiGet(
+  action,
+  params = {}
+) {
+
+  return new Promise(
+    function(resolve, reject) {
+
+      const callbackName =
+        'jsonp_' +
+        Date.now() +
+        '_' +
+        Math.floor(
+          Math.random() * 100000
+        );
+
+
+      const query =
+        new URLSearchParams();
+
+
+      query.set(
+        'action',
+        action
+      );
+
+
+      query.set(
+        'callback',
+        callbackName
+      );
+
+
+      Object.keys(params)
+        .forEach(
+          function(key) {
+
+            query.set(
+              key,
+              params[key]
+            );
+
+          }
+        );
+
+
+      const script =
+        document.createElement(
+          'script'
+        );
+
+
+      let finished = false;
+
+
+      const timeout =
+        setTimeout(
+          function() {
+
+            if (finished) {
+              return;
+            }
+
+
+            finished = true;
+
+
+            cleanup();
+
+
+            reject(
+              new Error(
+                'เชื่อมต่อ Google Apps Script ไม่สำเร็จ'
+              )
+            );
+
+          },
+          15000
+        );
+
+
+      window[callbackName] =
+        function(result) {
+
+          if (finished) {
+            return;
+          }
+
+
+          finished = true;
+
+
+          clearTimeout(
+            timeout
+          );
+
+
+          cleanup();
+
+
+          if (
+            result &&
+            result.success
+          ) {
+
+            resolve(
+              result.data
+            );
+
+          }
+
+          else {
+
+            reject(
+              new Error(
+                result &&
+                result.message
+                  ? result.message
+                  : 'API Error'
+              )
+            );
+
+          }
+
+        };
+
+
+      function cleanup() {
+
+        delete window[
+          callbackName
+        ];
+
+
+        if (
+          script.parentNode
+        ) {
+
+          script.parentNode
+            .removeChild(
+              script
+            );
+
+        }
+
+      }
+
+
+      script.src =
+        API_URL +
+        '?' +
+        query.toString();
+
+
+      script.onerror =
+        function() {
+
+          if (finished) {
+            return;
+          }
+
+
+          finished = true;
+
+
+          clearTimeout(
+            timeout
+          );
+
+
+          cleanup();
+
+
+          reject(
+            new Error(
+              'ไม่สามารถเชื่อมต่อ Google Apps Script'
+            )
+          );
+
+        };
+
+
+      document.body.appendChild(
+        script
+      );
+
+    }
+  );
+
+}
+
+
+
+/****************************************************
+ * API POST
+ *
+ * GitHub Pages → Apps Script
+ *
+ * ใช้ no-cors
+ ****************************************************/
+
+function apiPost(
+  data
+) {
+
+  return new Promise(
+    function(resolve, reject) {
+
+      try {
+
+        fetch(
+          API_URL,
+          {
+            method: 'POST',
+
+            mode: 'no-cors',
+
+            headers: {
+              'Content-Type':
+                'text/plain;charset=utf-8'
+            },
+
+            body:
+              JSON.stringify(data)
+
+          }
+        )
+
+        .then(
+          function() {
+
+            /*
+             * no-cors อ่าน response
+             * จาก Apps Script ไม่ได้
+             *
+             * แต่ request ถูกส่งออกแล้ว
+             */
+
+            resolve({
+              success: true
+            });
+
+          }
+        )
+
+        .catch(
+          function(error) {
+
+            reject(error);
+
+          }
+        );
+
+      }
+
+      catch (error) {
+
+        reject(error);
+
+      }
+
+    }
+  );
+
+}
+
+
+
+/****************************************************
+ * NUMBER
+ ****************************************************/
+
+function getNumber(
+  id
+) {
 
   return Number(
-    document.getElementById(id).value
+    document
+      .getElementById(id)
+      .value
   ) || 0;
 
 }
 
 
-function money(value) {
 
-  return Number(value || 0)
-    .toLocaleString('th-TH', {
+/****************************************************
+ * MONEY
+ ****************************************************/
+
+function money(
+  value
+) {
+
+  return Number(
+    value || 0
+  ).toLocaleString(
+    'th-TH',
+    {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    });
+    }
+  );
 
 }
 
 
-function escapeHtml(value) {
-
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-
-}
 
 /****************************************************
- * GOOGLE APPS SCRIPT API
+ * LOADING
  ****************************************************/
 
-const API_URL =
-  'https://script.google.com/macros/s/AKfycbzCXzsvORwlVAsW9D76WzMY3ignrwT9mtd6SKNlxpD4oDMqt3Pbp4rLAzk-kwIbVHn_/exec';
+function showLoading(
+  text
+) {
+
+  document
+    .getElementById(
+      'loadingText'
+    )
+    .innerText =
+      text ||
+      'กำลังโหลด...';
 
 
-/****************************************************
- * GET API - JSONP
- ****************************************************/
-
-function apiGet(action, params = {}) {
-
-  return new Promise(function(resolve, reject) {
-
-    const callbackName =
-      'jsonp_' +
-      Date.now() +
-      '_' +
-      Math.floor(
-        Math.random() * 100000
-      );
-
-
-    const query =
-      new URLSearchParams();
-
-
-    query.set(
-      'action',
-      action
+  document
+    .getElementById(
+      'loading'
+    )
+    .classList.add(
+      'show'
     );
-
-
-    query.set(
-      'callback',
-      callbackName
-    );
-
-
-    Object.keys(params)
-      .forEach(function(key) {
-
-        query.set(
-          key,
-          params[key]
-        );
-
-      });
-
-
-    const script =
-      document.createElement(
-        'script'
-      );
-
-
-    const timeout =
-      setTimeout(function() {
-
-        cleanup();
-
-        reject(
-          new Error(
-            'เชื่อมต่อ Google Apps Script ไม่สำเร็จ'
-          )
-        );
-
-      }, 15000);
-
-
-    window[callbackName] =
-      function(result) {
-
-        clearTimeout(timeout);
-
-        cleanup();
-
-        if (
-          result &&
-          result.success
-        ) {
-
-          resolve(
-            result.data
-          );
-
-        }
-
-        else {
-
-          reject(
-            new Error(
-              result.message ||
-              'API Error'
-            )
-          );
-
-        }
-
-      };
-
-
-    function cleanup() {
-
-      delete window[
-        callbackName
-      ];
-
-      if (script.parentNode) {
-
-        script.parentNode
-          .removeChild(script);
-
-      }
-
-    }
-
-
-    script.src =
-      API_URL +
-      '?' +
-      query.toString();
-
-
-    script.onerror =
-      function() {
-
-        clearTimeout(timeout);
-
-        cleanup();
-
-        reject(
-          new Error(
-            'ไม่สามารถเชื่อมต่อ Google Apps Script'
-          )
-        );
-
-      };
-
-
-    document.body.appendChild(
-      script
-    );
-
-  });
 
 }
 
 
-/****************************************************
- * POST API
- ****************************************************/
 
-function apiPost(data) {
+function hideLoading() {
 
-  return new Promise(function(
-    resolve,
-    reject
-  ) {
-
-    try {
-
-      fetch(
-        API_URL,
-        {
-          method: 'POST',
-
-          body:
-            JSON.stringify(data),
-
-          mode: 'no-cors'
-        }
-      );
-
-
-      /**
-       * no-cors จะอ่าน response ไม่ได้
-       *
-       * ดังนั้นให้ถือว่าส่งสำเร็จ
-       * หลังจาก request ถูกส่งออก
-       */
-
-      resolve({
-        success: true
-      });
-
-    }
-
-    catch (error) {
-
-      reject(error);
-
-    }
-
-  });
+  document
+    .getElementById(
+      'loading'
+    )
+    .classList.remove(
+      'show'
+    );
 
 }
 
 </script>
 
+
 </body>
+
 </html>
