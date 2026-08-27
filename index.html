@@ -1,526 +1,600 @@
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<script>
+
 /****************************************************
- * LINE LIFF SALES REPORT
- * Google Apps Script + Google Sheets + Google Drive
+ * LIFF
  ****************************************************/
 
-const CONFIG = {
+const LIFF_ID =
+  '2007788493-ViOpm5bx';
 
-  SPREADSHEET_ID:
-    '1XZ8tlL8aLcgCCdgWb1KPEO4ZI1Mf9t-BrXXeqmeXp90',
 
-  SALES_SHEET:
-    'รายงานยอดขาย',
+const API_URL =
+  'https://script.google.com/macros/s/AKfycbzCXzsvORwlVAsW9D76WzMY3ignrwT9mtd6SKNlxpD4oDMqt3Pbp4rLAzk-kwIbVHn_/exec';
 
-  // ROOT FOLDER
-  DRIVE_FOLDER_ID:
-    '1fNe5bMW9N1SfSTVdLgFJLPAlRCuvh2ft',
 
-  SHOPS: [
-    'M1',
-    'M85',
-    'M95',
-    'M89'
-  ],
+/****************************************************
+ * FIXED STORE CONFIG
+ *
+ * ================================================
+ * แก้รายชื่อพนักงานจริงตรงนี้
+ * ================================================
+ ****************************************************/
 
-  SHIFTS: [
-    '09.00-14.00',
-    '14.00-18.00',
-    '18.00-23.00'
-  ]
+const FIXED_CONFIGS = {
+
+  M1: {
+
+    shop: 'M1',
+
+    employees: [
+      'น้อง A',
+      'น้อง B',
+      'น้อง C'
+    ]
+
+  },
+
+
+  M85: {
+
+    shop: 'M85',
+
+    employees: [
+      'น้อง A',
+      'น้อง B',
+      'น้อง C'
+    ]
+
+  },
+
+
+  M95: {
+
+    shop: 'M95',
+
+    employees: [
+      'น้อง A',
+      'น้อง B',
+      'น้อง C'
+    ]
+
+  },
+
+
+  M89: {
+
+    shop: 'M89',
+
+    employees: [
+      'น้อง A',
+      'น้อง B',
+      'น้อง C'
+    ]
+
+  }
 
 };
 
 
 /****************************************************
- * GET
- *
- * ใช้สำหรับทดสอบ API เท่านั้น
- *
- * ระบบไม่โหลดร้าน/พนักงานจาก Google Sheet แล้ว
+ * SHIFT
  ****************************************************/
 
-function doGet(e) {
+const SHIFT_OPTIONS = [
 
-  try {
+  '09.00-14.00',
 
-    const action =
-      e &&
-      e.parameter
-        ? e.parameter.action || ''
-        : '';
+  '14.00-18.00',
 
-    const callback =
-      e &&
-      e.parameter
-        ? e.parameter.callback || ''
-        : '';
+  '18.00-23.00'
 
-    let result;
-
-
-    if (action === 'test') {
-
-      result = {
-        success: true,
-        message: 'Apps Script ทำงานปกติ',
-        time:
-          new Date().toISOString()
-      };
-
-    }
-
-    else {
-
-      result = {
-        success: false,
-        message: 'Unknown action',
-        receivedAction: action
-      };
-
-    }
-
-
-    if (callback) {
-
-      return ContentService
-        .createTextOutput(
-          callback +
-          '(' +
-          JSON.stringify(result) +
-          ')'
-        )
-        .setMimeType(
-          ContentService.MimeType.JAVASCRIPT
-        );
-
-    }
-
-
-    return ContentService
-      .createTextOutput(
-        JSON.stringify(result)
-      )
-      .setMimeType(
-        ContentService.MimeType.JSON
-      );
-
-  }
-
-  catch (error) {
-
-    return ContentService
-      .createTextOutput(
-        JSON.stringify({
-          success: false,
-          message: error.message
-        })
-      )
-      .setMimeType(
-        ContentService.MimeType.JSON
-      );
-
-  }
-
-}
+];
 
 
 /****************************************************
- * POST
+ * VARIABLES
  ****************************************************/
 
-function doPost(e) {
+let lineProfile = null;
+
+let currentEmployees = [];
+
+let selectedEmployees = [];
+
+let selectedShifts = [];
+
+let currentShop = '';
+
+let imageData = null;
+
+
+/****************************************************
+ * INIT
+ ****************************************************/
+
+window.addEventListener(
+  'load',
+  init
+);
+
+
+async function init() {
+
+  setToday();
+
 
   try {
 
     if (
-      !e ||
-      !e.postData ||
-      !e.postData.contents
+      !LIFF_ID
     ) {
 
       throw new Error(
-        'ไม่พบข้อมูล POST'
+        'ยังไม่ได้ใส่ LIFF ID'
       );
 
     }
 
 
-    const data =
-      JSON.parse(
-        e.postData.contents
-      );
+    /**********************************************
+     * LIFF INIT
+     **********************************************/
+
+    await liff.init({
+
+      liffId:
+        LIFF_ID
+
+    });
 
 
-    const result =
-      saveSalesReport(data);
+    /**********************************************
+     * LOGIN
+     **********************************************/
+
+    if (
+      !liff.isLoggedIn()
+    ) {
+
+      liff.login();
+
+      return;
+
+    }
 
 
-    return ContentService
-      .createTextOutput(
-        JSON.stringify(result)
+    /**********************************************
+     * PROFILE
+     **********************************************/
+
+    lineProfile =
+      await liff.getProfile();
+
+
+    document
+      .getElementById(
+        'userInfo'
       )
-      .setMimeType(
-        ContentService.MimeType.JSON
-      );
+      .innerText =
+        'ผู้ส่ง: ' +
+        lineProfile.displayName;
+
+
+    /**********************************************
+     * LOAD LOCAL CONFIG
+     **********************************************/
+
+    initializeFixedConfig();
 
   }
 
   catch (error) {
 
-    return ContentService
-      .createTextOutput(
-        JSON.stringify({
-          success: false,
-          message: error.message
-        })
+    console.error(
+      error
+    );
+
+
+    alert(
+      'ไม่สามารถเปิดระบบได้\n\n' +
+      error.message
+    );
+
+  }
+
+}
+
+
+/****************************************************
+ * FIXED CONFIG INIT
+ ****************************************************/
+
+function initializeFixedConfig() {
+
+  const shopSelect =
+    document.getElementById(
+      'shop'
+    );
+
+
+  if (!shopSelect) {
+
+    return;
+
+  }
+
+
+  /**********************************************
+   * ร้านทั้งหมด
+   **********************************************/
+
+  shopSelect.innerHTML =
+    '<option value="">-- เลือกร้าน --</option>';
+
+
+  Object.keys(
+    FIXED_CONFIGS
+  ).forEach(
+    function(shop) {
+
+      const option =
+        document.createElement(
+          'option'
+        );
+
+
+      option.value =
+        shop;
+
+
+      option.textContent =
+        shop;
+
+
+      shopSelect.appendChild(
+        option
+      );
+
+    }
+  );
+
+
+  currentShop = '';
+
+  currentEmployees = [];
+
+  selectedEmployees = [];
+
+  renderEmployees([]);
+
+  updateSelectedEmployees();
+
+}
+
+
+/****************************************************
+ * GET FIXED CONFIG
+ ****************************************************/
+
+function getFixedConfig(
+  shop
+) {
+
+  return (
+    FIXED_CONFIGS[shop] ||
+    null
+  );
+
+}
+
+
+/****************************************************
+ * SHOP CHANGED
+ ****************************************************/
+
+function shopChanged() {
+
+  const shop =
+    document
+      .getElementById(
+        'shop'
       )
-      .setMimeType(
-        ContentService.MimeType.JSON
-      );
+      .value;
+
+
+  currentShop =
+    shop;
+
+
+  selectedEmployees = [];
+
+
+  const config =
+    getFixedConfig(
+      shop
+    );
+
+
+  if (!config) {
+
+    currentEmployees = [];
+
+    renderEmployees([]);
+
+    updateSelectedEmployees();
+
+    return;
 
   }
+
+
+  /**********************************************
+   * ใช้พนักงานของร้านนั้นทันที
+   **********************************************/
+
+  currentEmployees =
+    Array.isArray(
+      config.employees
+    )
+      ? [
+          ...config.employees
+        ]
+      : [];
+
+
+  renderEmployees(
+    currentEmployees
+  );
+
+
+  updateSelectedEmployees();
 
 }
 
 
 /****************************************************
- * SAVE SALES REPORT
+ * RENDER EMPLOYEES
  ****************************************************/
 
-function saveSalesReport(data) {
+function renderEmployees(
+  staff
+) {
 
-  if (!data) {
-
-    throw new Error(
-      'ไม่พบข้อมูล'
+  const list =
+    document.getElementById(
+      'employeeList'
     );
+
+
+  if (!list) {
+
+    return;
 
   }
 
 
-  validateData(data);
+  list.innerHTML = '';
 
-
-  const ss =
-    SpreadsheetApp.openById(
-      CONFIG.SPREADSHEET_ID
-    );
-
-
-  const sheet =
-    ss.getSheetByName(
-      CONFIG.SALES_SHEET
-    );
-
-
-  if (!sheet) {
-
-    throw new Error(
-      'ไม่พบ Sheet: ' +
-      CONFIG.SALES_SHEET
-    );
-
-  }
-
-
-  let imageUrl = '';
-
-
-  /**************************************************
-   * SAVE IMAGE
-   **************************************************/
 
   if (
-    data.image &&
-    data.image.data
+    !staff ||
+    !staff.length
   ) {
 
-    imageUrl =
-      saveImageToDrive(
+    list.innerHTML =
+      '<div style="padding:15px;">' +
+      'กรุณาเลือกร้านก่อน' +
+      '</div>';
 
-        data.image.data,
-
-        data.image.name ||
-          'ใบส่งยอด.jpg',
-
-        data.image.mimeType ||
-          'image/jpeg',
-
-        data.shop,
-
-        data.date,
-
-        data.shift
-
-      );
+    return;
 
   }
 
 
-  /**************************************************
-   * EMPLOYEES
-   **************************************************/
+  staff.forEach(
+    function(
+      name,
+      index
+    ) {
 
-  const employeeNames =
-    Array.isArray(data.employees)
-      ? data.employees.join(', ')
-      : '';
-
-
-  /**************************************************
-   * SHIFT
-   **************************************************/
-
-  const shiftText =
-    normalizeShifts(
-      data.shift
-    );
+      const row =
+        document.createElement(
+          'div'
+        );
 
 
-  /**************************************************
-   * SAVE SHEET
-   **************************************************/
-
-  sheet.appendRow([
-
-    new Date(),
-
-    data.lineUserId || '',
-
-    data.lineName || '',
-
-    data.shop || '',
-
-    data.date || '',
-
-    shiftText,
-
-    Number(data.totalSales) || 0,
-
-    Number(data.cash) || 0,
-
-    Number(data.credit) || 0,
-
-    Number(data.qr) || 0,
-
-    Number(data.employeeTotal) || 0,
-
-    Number(data.employeeCash) || 0,
-
-    Number(data.employeeQr) || 0,
-
-    Number(data.simSales) || 0,
-
-    employeeNames,
-
-    imageUrl
-
-  ]);
+      row.className =
+        'employee-item';
 
 
-  return {
+      const checkbox =
+        document.createElement(
+          'input'
+        );
 
-    success: true,
 
-    message:
-      'บันทึกรายงานเรียบร้อยแล้ว',
+      checkbox.type =
+        'checkbox';
 
-    imageUrl:
-      imageUrl
 
-  };
+      checkbox.id =
+        'staff_' +
+        index;
+
+
+      checkbox.value =
+        name;
+
+
+      checkbox.addEventListener(
+        'change',
+        employeeChanged
+      );
+
+
+      const label =
+        document.createElement(
+          'label'
+        );
+
+
+      label.htmlFor =
+        checkbox.id;
+
+
+      label.textContent =
+        name;
+
+
+      row.appendChild(
+        checkbox
+      );
+
+
+      row.appendChild(
+        label
+      );
+
+
+      list.appendChild(
+        row
+      );
+
+    }
+  );
+
+
+  document
+    .getElementById(
+      'employeeSelector'
+    )
+    .innerText =
+      'แตะเพื่อเลือกพนักงาน';
 
 }
 
 
 /****************************************************
- * VALIDATE
+ * TOGGLE EMPLOYEES
  ****************************************************/
 
-function validateData(data) {
+function toggleEmployees() {
 
-  /**************************************************
-   * SHOP
-   **************************************************/
-
-  if (!data.shop) {
-
-    throw new Error(
-      'ไม่พบร้าน'
+  const list =
+    document.getElementById(
+      'employeeList'
     );
-
-  }
 
 
   if (
-    CONFIG.SHOPS.indexOf(
-      String(data.shop).trim()
-    ) === -1
+    !currentEmployees.length
   ) {
 
-    throw new Error(
-      'ร้านไม่ถูกต้อง: ' +
-      data.shop
-    );
+    return;
 
   }
 
 
-  /**************************************************
-   * DATE
-   **************************************************/
+  list.classList.toggle(
+    'show'
+  );
 
-  if (!data.date) {
-
-    throw new Error(
-      'กรุณาเลือกวันที่'
-    );
-
-  }
+}
 
 
-  /**************************************************
-   * SHIFT
-   **************************************************/
+/****************************************************
+ * EMPLOYEE CHANGED
+ ****************************************************/
 
-  if (!data.shift) {
+function employeeChanged() {
 
-    throw new Error(
-      'กรุณาเลือกกะอย่างน้อย 1 กะ'
-    );
-
-  }
-
-
-  const shifts =
-    parseShifts(
-      data.shift
+  const checkboxes =
+    document.querySelectorAll(
+      '#employeeList input[type="checkbox"]'
     );
 
 
-  if (!shifts.length) {
-
-    throw new Error(
-      'ไม่พบกะที่เลือก'
-    );
-
-  }
+  selectedEmployees = [];
 
 
-  const invalidShifts =
-    shifts.filter(
-      function(shift) {
+  checkboxes.forEach(
+    function(cb) {
 
-        return CONFIG.SHIFTS.indexOf(
-          shift
-        ) === -1;
+      if (
+        cb.checked
+      ) {
+
+        selectedEmployees.push(
+          cb.value
+        );
 
       }
+
+    }
+  );
+
+
+  updateSelectedEmployees();
+
+}
+
+
+/****************************************************
+ * UPDATE EMPLOYEES
+ ****************************************************/
+
+function updateSelectedEmployees() {
+
+  const box =
+    document.getElementById(
+      'selectedEmployees'
     );
 
 
-  if (invalidShifts.length) {
-
-    throw new Error(
-      'พบกะไม่ถูกต้อง: ' +
-      invalidShifts.join(', ')
+  const selector =
+    document.getElementById(
+      'employeeSelector'
     );
-
-  }
-
-
-  /**************************************************
-   * EMPLOYEES
-   **************************************************/
-
-  if (
-    !Array.isArray(data.employees) ||
-    data.employees.length === 0
-  ) {
-
-    throw new Error(
-      'กรุณาเลือกพนักงานอย่างน้อย 1 คน'
-    );
-
-  }
-
-
-  /**************************************************
-   * SALES
-   **************************************************/
-
-  const totalSales =
-    Number(data.totalSales) || 0;
-
-  const cash =
-    Number(data.cash) || 0;
-
-  const credit =
-    Number(data.credit) || 0;
-
-  const qr =
-    Number(data.qr) || 0;
-
-
-  const salesSum =
-    cash +
-    credit +
-    qr;
 
 
   if (
-    Math.abs(
-      totalSales -
-      salesSum
-    ) > 0.01
+    !selectedEmployees.length
   ) {
 
-    throw new Error(
-      'ยอดขายไม่ตรงกัน: ' +
-      'รวมยอดขาย ' +
-      totalSales +
-      ' ≠ เงินสด + เครดิต + QR ' +
-      salesSum
-    );
+    box.innerText =
+      'ยังไม่ได้เลือกพนักงาน';
+
+
+    if (
+      currentEmployees.length
+    ) {
+
+      selector.innerText =
+        'แตะเพื่อเลือกพนักงาน';
+
+    }
+
+
+    return;
 
   }
 
 
-  /**************************************************
-   * EMPLOYEE SALES
-   **************************************************/
-
-  const employeeTotal =
-    Number(data.employeeTotal) || 0;
-
-  const employeeCash =
-    Number(data.employeeCash) || 0;
-
-  const employeeQr =
-    Number(data.employeeQr) || 0;
-
-
-  const employeeSum =
-    employeeCash +
-    employeeQr;
-
-
-  if (
-    Math.abs(
-      employeeTotal -
-      employeeSum
-    ) > 0.01
-  ) {
-
-    throw new Error(
-      'ยอดพนักงานซื้อไม่ตรงกัน: ' +
-      'รวม ' +
-      employeeTotal +
-      ' ≠ เงินสด + QR ' +
-      employeeSum
+  box.innerText =
+    'เลือกแล้ว ' +
+    selectedEmployees.length +
+    ' คน: ' +
+    selectedEmployees.join(
+      ', '
     );
 
-  }
+
+  selector.innerText =
+    'เลือกพนักงานแล้ว ' +
+    selectedEmployees.length +
+    ' คน';
 
 }
 
@@ -529,406 +603,1007 @@ function validateData(data) {
  * SHIFT
  ****************************************************/
 
-function parseShifts(shift) {
+function toggleShifts() {
 
-  if (Array.isArray(shift)) {
+  const list =
+    document.getElementById(
+      'shiftList'
+    );
 
-    return shift
-      .map(function(value) {
 
-        return String(value).trim();
+  if (!list) {
 
-      })
-      .filter(Boolean);
+    return;
 
   }
 
 
-  return String(
-    shift || ''
-  )
-    .split(',')
-    .map(function(value) {
-
-      return String(value).trim();
-
-    })
-    .filter(Boolean);
-
-}
-
-
-function normalizeShifts(shift) {
-
-  return parseShifts(
-    shift
-  ).join(', ');
+  list.classList.toggle(
+    'show'
+  );
 
 }
 
 
 /****************************************************
- * SAVE IMAGE
- *
- * ROOT
- * └── 2569
- *     └── 08สิงหาคม
- *
- * ตัวอย่างชื่อ:
- *
- * 20260817_M85_09.00-14.00_14.00-18.00_ใบส่งยอด.jpg
+ * SHIFT CHANGED
  ****************************************************/
 
-function saveImageToDrive(
-  base64,
-  fileName,
-  mimeType,
-  shop,
-  date,
-  shift
-) {
+function shiftChanged() {
 
-  const rootFolder =
-    DriveApp.getFolderById(
-      CONFIG.DRIVE_FOLDER_ID
+  const checkboxes =
+    document.querySelectorAll(
+      '#shiftList input[type="checkbox"]'
     );
 
 
-  const dateObj =
-    parseReportDate(
-      date
-    );
+  selectedShifts = [];
 
 
-  if (!dateObj) {
+  checkboxes.forEach(
+    function(cb) {
 
-    throw new Error(
-      'รูปแบบวันที่ไม่ถูกต้อง: ' +
-      date
-    );
+      if (
+        cb.checked
+      ) {
 
-  }
+        selectedShifts.push(
+          cb.value
+        );
 
+      }
 
-  /**************************************************
-   * พ.ศ.
-   **************************************************/
-
-  const buddhistYear =
-    dateObj.getFullYear() +
-    543;
-
-
-  /**************************************************
-   * เดือน
-   **************************************************/
-
-  const month =
-    dateObj.getMonth();
-
-
-  const monthNames = [
-
-    'มกราคม',
-    'กุมภาพันธ์',
-    'มีนาคม',
-    'เมษายน',
-    'พฤษภาคม',
-    'มิถุนายน',
-    'กรกฎาคม',
-    'สิงหาคม',
-    'กันยายน',
-    'ตุลาคม',
-    'พฤศจิกายน',
-    'ธันวาคม'
-
-  ];
-
-
-  const monthNumber =
-    String(
-      month + 1
-    ).padStart(
-      2,
-      '0'
-    );
-
-
-  const monthFolderName =
-    monthNumber +
-    monthNames[month];
-
-
-  /**************************************************
-   * YEAR FOLDER
-   **************************************************/
-
-  const yearFolder =
-    getOrCreateFolder(
-      rootFolder,
-      String(buddhistYear)
-    );
-
-
-  /**************************************************
-   * MONTH FOLDER
-   **************************************************/
-
-  const monthFolder =
-    getOrCreateFolder(
-      yearFolder,
-      monthFolderName
-    );
-
-
-  /**************************************************
-   * BASE64
-   **************************************************/
-
-  const cleanBase64 =
-    String(base64)
-      .replace(
-        /^data:[^;]+;base64,/,
-        ''
-      );
-
-
-  const bytes =
-    Utilities.base64Decode(
-      cleanBase64
-    );
-
-
-  const blob =
-    Utilities.newBlob(
-      bytes,
-      mimeType || 'image/jpeg',
-      fileName || 'ใบส่งยอด.jpg'
-    );
-
-
-  /**************************************************
-   * FILE NAME
-   **************************************************/
-
-  const yyyy =
-    dateObj.getFullYear();
-
-
-  const mm =
-    String(
-      dateObj.getMonth() + 1
-    ).padStart(
-      2,
-      '0'
-    );
-
-
-  const dd =
-    String(
-      dateObj.getDate()
-    ).padStart(
-      2,
-      '0'
-    );
-
-
-  const shiftName =
-    parseShifts(
-      shift
-    ).join('_');
-
-
-  const cleanShop =
-    sanitizeFileName(
-      shop ||
-      'ไม่ระบุร้าน'
-    );
-
-
-  const cleanOriginalName =
-    sanitizeFileName(
-      fileName ||
-      'ใบส่งยอด.jpg'
-    );
-
-
-  let finalName =
-    yyyy +
-    mm +
-    dd +
-    '_' +
-    cleanShop;
-
-
-  if (shiftName) {
-
-    finalName +=
-      '_' +
-      shiftName;
-
-  }
-
-
-  finalName +=
-    '_' +
-    cleanOriginalName;
-
-
-  /**************************************************
-   * CREATE FILE
-   **************************************************/
-
-  const file =
-    monthFolder.createFile(
-      blob
-    );
-
-
-  file.setName(
-    finalName
+    }
   );
 
 
-  return file.getUrl();
+  updateSelectedShifts();
 
 }
 
 
 /****************************************************
- * PARSE DATE
+ * UPDATE SHIFT
  ****************************************************/
 
-function parseReportDate(date) {
+function updateSelectedShifts() {
+
+  const selector =
+    document.getElementById(
+      'shiftSelector'
+    );
+
+
+  const box =
+    document.getElementById(
+      'selectedShifts'
+    );
+
 
   if (
-    Object.prototype
-      .toString
-      .call(date) ===
-      '[object Date]'
+    !selector ||
+    !box
   ) {
 
-    return date;
+    return;
 
   }
 
 
-  const text =
-    String(date).trim();
+  if (
+    !selectedShifts.length
+  ) {
+
+    selector.innerText =
+      'แตะเพื่อเลือกกะ';
+
+
+    box.innerText =
+      'ยังไม่ได้เลือกกะ';
+
+    return;
+
+  }
+
+
+  selector.innerText =
+    'เลือกแล้ว ' +
+    selectedShifts.length +
+    ' กะ';
+
+
+  box.innerText =
+    selectedShifts.join(
+      ', '
+    );
+
+}
+
+
+/****************************************************
+ * DATE
+ ****************************************************/
+
+function setToday() {
+
+  const now =
+    new Date();
+
+
+  const year =
+    now.getFullYear();
+
+
+  const month =
+    String(
+      now.getMonth() + 1
+    ).padStart(
+      2,
+      '0'
+    );
+
+
+  const day =
+    String(
+      now.getDate()
+    ).padStart(
+      2,
+      '0'
+    );
+
+
+  document
+    .getElementById(
+      'date'
+    )
+    .value =
+      year +
+      '-' +
+      month +
+      '-' +
+      day;
+
+}
+
+
+/****************************************************
+ * SALES CHECK
+ ****************************************************/
+
+function checkSales() {
+
+  const total =
+    getNumber(
+      'totalSales'
+    );
+
+
+  const cash =
+    getNumber(
+      'cash'
+    );
+
+
+  const credit =
+    getNumber(
+      'credit'
+    );
+
+
+  const qr =
+    getNumber(
+      'qr'
+    );
+
+
+  const sum =
+    cash +
+    credit +
+    qr;
+
+
+  const box =
+    document.getElementById(
+      'salesCheck'
+    );
+
+
+  if (
+    !total &&
+    !sum
+  ) {
+
+    box.className =
+      'check-box';
+
+
+    box.innerText =
+      'กรุณากรอกยอดขาย';
+
+
+    return false;
+
+  }
+
+
+  if (
+    Math.abs(
+      total -
+      sum
+    ) < 0.01
+  ) {
+
+    box.className =
+      'check-box ok';
+
+
+    box.innerText =
+      '✓ ยอดขายถูกต้อง';
+
+
+    return true;
+
+  }
+
+
+  box.className =
+    'check-box error';
+
+
+  box.innerText =
+    'ยอดไม่ตรงกัน: ' +
+    money(total) +
+    ' ≠ ' +
+    money(sum);
+
+
+  return false;
+
+}
+
+
+/****************************************************
+ * EMPLOYEE SALES CHECK
+ ****************************************************/
+
+function checkEmployeeSales() {
+
+  const total =
+    getNumber(
+      'employeeTotal'
+    );
+
+
+  const cash =
+    getNumber(
+      'employeeCash'
+    );
+
+
+  const qr =
+    getNumber(
+      'employeeQr'
+    );
+
+
+  const sum =
+    cash +
+    qr;
+
+
+  const box =
+    document.getElementById(
+      'employeeCheck'
+    );
+
+
+  if (
+    !total &&
+    !sum
+  ) {
+
+    box.className =
+      'check-box';
+
+
+    box.innerText =
+      'กรุณากรอกยอดพนักงานซื้อ';
+
+
+    return true;
+
+  }
+
+
+  if (
+    Math.abs(
+      total -
+      sum
+    ) < 0.01
+  ) {
+
+    box.className =
+      'check-box ok';
+
+
+    box.innerText =
+      '✓ ยอดพนักงานซื้อถูกต้อง';
+
+
+    return true;
+
+  }
+
+
+  box.className =
+    'check-box error';
+
+
+  box.innerText =
+    'ยอดไม่ตรงกัน: ' +
+    money(total) +
+    ' ≠ ' +
+    money(sum);
+
+
+  return false;
+
+}
+
+
+/****************************************************
+ * PHOTO
+ ****************************************************/
+
+function photoSelected(
+  event
+) {
+
+  const file =
+    event
+      .target
+      .files[0];
+
+
+  if (!file) {
+
+    return;
+
+  }
+
+
+  if (
+    !file.type.startsWith(
+      'image/'
+    )
+  ) {
+
+    alert(
+      'กรุณาเลือกไฟล์รูปภาพ'
+    );
+
+    return;
+
+  }
+
+
+  const reader =
+    new FileReader();
+
+
+  reader.onload =
+    function(e) {
+
+      imageData = {
+
+        data:
+          e.target.result,
+
+        name:
+          file.name,
+
+        mimeType:
+          file.type
+
+      };
+
+
+      const preview =
+        document.getElementById(
+          'photoPreview'
+        );
+
+
+      preview.src =
+        e.target.result;
+
+
+      preview.style.display =
+        'block';
+
+
+      document
+        .getElementById(
+          'photoText'
+        )
+        .innerHTML =
+          '✓ เลือกรูปแล้ว';
+
+    };
+
+
+  reader.readAsDataURL(
+    file
+  );
+
+}
+
+
+/****************************************************
+ * SUBMIT
+ ****************************************************/
+
+async function submitForm() {
+
+  const shop =
+    currentShop ||
+    document
+      .getElementById(
+        'shop'
+      )
+      .value;
+
+
+  const date =
+    document
+      .getElementById(
+        'date'
+      )
+      .value;
 
 
   /**************************************************
-   * YYYY-MM-DD
+   * SHOP
    **************************************************/
 
-  const match =
-    text.match(
-      /^(\d{4})-(\d{1,2})-(\d{1,2})$/
+  if (!shop) {
+
+    alert(
+      'กรุณาเลือกร้าน'
     );
 
-
-  if (match) {
-
-    return new Date(
-
-      Number(match[1]),
-
-      Number(match[2]) - 1,
-
-      Number(match[3])
-
-    );
+    return;
 
   }
 
 
   /**************************************************
-   * DD/MM/YYYY
+   * DATE
    **************************************************/
 
-  const match2 =
-    text.match(
-      /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+  if (!date) {
+
+    alert(
+      'กรุณาเลือกวันที่'
+    );
+
+    return;
+
+  }
+
+
+  /**************************************************
+   * SHIFT
+   **************************************************/
+
+  if (
+    !selectedShifts.length
+  ) {
+
+    alert(
+      'กรุณาเลือกกะอย่างน้อย 1 กะ'
+    );
+
+    return;
+
+  }
+
+
+  /**************************************************
+   * EMPLOYEE
+   **************************************************/
+
+  if (
+    !selectedEmployees.length
+  ) {
+
+    alert(
+      'กรุณาเลือกพนักงานอย่างน้อย 1 คน'
+    );
+
+    return;
+
+  }
+
+
+  /**************************************************
+   * SALES
+   **************************************************/
+
+  if (!checkSales()) {
+
+    alert(
+      'กรุณาตรวจสอบยอดขาย\n\n' +
+      'เงินสด + เครดิต + QR ' +
+      'ต้องเท่ากับรวมยอดขาย'
+    );
+
+    return;
+
+  }
+
+
+  /**************************************************
+   * EMPLOYEE SALES
+   **************************************************/
+
+  if (
+    !checkEmployeeSales()
+  ) {
+
+    alert(
+      'กรุณาตรวจสอบยอดพนักงานซื้อ\n\n' +
+      'เงินสด + QR ' +
+      'ต้องเท่ากับรวมพนักงานซื้อ'
+    );
+
+    return;
+
+  }
+
+
+  /**************************************************
+   * PHOTO
+   **************************************************/
+
+  if (!imageData) {
+
+    alert(
+      'กรุณาแนบรูปใบส่งยอด'
+    );
+
+    return;
+
+  }
+
+
+  /**************************************************
+   * DATA
+   **************************************************/
+
+  const data = {
+
+    lineUserId:
+
+      lineProfile
+        ? lineProfile.userId
+        : '',
+
+
+    lineName:
+
+      lineProfile
+        ? lineProfile.displayName
+        : '',
+
+
+    shop:
+      shop,
+
+
+    date:
+      date,
+
+
+    shift:
+      selectedShifts.join(
+        ', '
+      ),
+
+
+    totalSales:
+      getNumber(
+        'totalSales'
+      ),
+
+
+    cash:
+      getNumber(
+        'cash'
+      ),
+
+
+    credit:
+      getNumber(
+        'credit'
+      ),
+
+
+    qr:
+      getNumber(
+        'qr'
+      ),
+
+
+    employeeTotal:
+      getNumber(
+        'employeeTotal'
+      ),
+
+
+    employeeCash:
+      getNumber(
+        'employeeCash'
+      ),
+
+
+    employeeQr:
+      getNumber(
+        'employeeQr'
+      ),
+
+
+    simSales:
+      getNumber(
+        'simSales'
+      ),
+
+
+    employees:
+      selectedEmployees,
+
+
+    image:
+      imageData
+
+  };
+
+
+  /**************************************************
+   * LOADING
+   **************************************************/
+
+  showLoading(
+    'กำลังส่งข้อมูล...'
+  );
+
+
+  document
+    .getElementById(
+      'submitBtn'
+    )
+    .disabled = true;
+
+
+  try {
+
+    await apiPost(
+      data
     );
 
 
-  if (match2) {
-
-    let year =
-      Number(match2[3]);
+    hideLoading();
 
 
-    if (year > 2400) {
+    alert(
+      '✓ ส่งรายงานเรียบร้อยแล้ว'
+    );
 
-      year -= 543;
+
+    if (
+      typeof liff !==
+      'undefined' &&
+      liff.isInClient()
+    ) {
+
+      liff.closeWindow();
 
     }
 
+    else {
 
-    return new Date(
+      resetForm();
 
-      year,
-
-      Number(match2[2]) - 1,
-
-      Number(match2[1])
-
-    );
+    }
 
   }
 
+  catch (error) {
 
-  return null;
+    hideLoading();
+
+
+    document
+      .getElementById(
+        'submitBtn'
+      )
+      .disabled = false;
+
+
+    alert(
+      'เกิดข้อผิดพลาด\n\n' +
+      error.message
+    );
+
+  }
 
 }
 
 
 /****************************************************
- * GET / CREATE FOLDER
+ * POST API
  ****************************************************/
 
-function getOrCreateFolder(
-  parentFolder,
-  folderName
+function apiPost(
+  data
 ) {
 
-  const folders =
-    parentFolder.getFoldersByName(
-      folderName
-    );
+  return new Promise(
+    function(
+      resolve,
+      reject
+    ) {
 
+      try {
 
-  if (folders.hasNext()) {
+        fetch(
+          API_URL,
+          {
 
-    return folders.next();
+            method:
+              'POST',
 
-  }
+            mode:
+              'no-cors',
 
+            headers: {
 
-  return parentFolder.createFolder(
-    folderName
+              'Content-Type':
+                'text/plain;charset=utf-8'
+
+            },
+
+            body:
+              JSON.stringify(
+                data
+              )
+
+          }
+        )
+        .then(
+          function() {
+
+            resolve({
+              success: true
+            });
+
+          }
+        )
+        .catch(
+          function(error) {
+
+            reject(
+              error
+            );
+
+          }
+        );
+
+      }
+
+      catch (error) {
+
+        reject(
+          error
+        );
+
+      }
+
+    }
   );
 
 }
 
 
 /****************************************************
- * CLEAN FILE NAME
+ * RESET
  ****************************************************/
 
-function sanitizeFileName(name) {
+function resetForm() {
 
-  return String(
-    name || ''
-  )
-    .replace(
-      /[\\\/:*?"<>|]/g,
-      '_'
+  [
+
+    'totalSales',
+
+    'cash',
+
+    'credit',
+
+    'qr',
+
+    'employeeTotal',
+
+    'employeeCash',
+
+    'employeeQr',
+
+    'simSales'
+
+  ]
+  .forEach(
+    function(id) {
+
+      document
+        .getElementById(id)
+        .value = '';
+
+    }
+  );
+
+
+  selectedEmployees = [];
+
+
+  selectedShifts = [];
+
+
+  document
+    .querySelectorAll(
+      '#shiftList input[type="checkbox"]'
     )
-    .replace(
-      /\s+/g,
-      ' '
+    .forEach(
+      function(cb) {
+
+        cb.checked = false;
+
+      }
+    );
+
+
+  updateSelectedShifts();
+
+
+  imageData = null;
+
+
+  document
+    .getElementById(
+      'photo'
     )
-    .trim();
+    .value = '';
+
+
+  document
+    .getElementById(
+      'photoPreview'
+    )
+    .style.display =
+      'none';
+
+
+  document
+    .getElementById(
+      'photoText'
+    )
+    .innerHTML =
+      '📷<br>' +
+      'แตะเพื่อถ่ายรูป<br>' +
+      '<small>' +
+      'หรือเลือกรูปจากเครื่อง' +
+      '</small>';
+
+
+  updateSelectedEmployees();
+
+
+  document
+    .getElementById(
+      'submitBtn'
+    )
+    .disabled =
+      false;
+
+
+  checkSales();
+
+
+  checkEmployeeSales();
 
 }
+
+
+/****************************************************
+ * NUMBER
+ ****************************************************/
+
+function getNumber(
+  id
+) {
+
+  return Number(
+    document
+      .getElementById(id)
+      .value
+  ) || 0;
+
+}
+
+
+/****************************************************
+ * MONEY
+ ****************************************************/
+
+function money(
+  value
+) {
+
+  return Number(
+    value || 0
+  )
+    .toLocaleString(
+      'th-TH',
+      {
+
+        minimumFractionDigits:
+          2,
+
+        maximumFractionDigits:
+          2
+
+      }
+    );
+
+}
+
+
+/****************************************************
+ * LOADING
+ ****************************************************/
+
+function showLoading(
+  text
+) {
+
+  document
+    .getElementById(
+      'loadingText'
+    )
+    .innerText =
+      text ||
+      'กำลังโหลด...';
+
+
+  document
+    .getElementById(
+      'loading'
+    )
+    .classList.add(
+      'show'
+    );
+
+}
+
+
+function hideLoading() {
+
+  document
+    .getElementById(
+      'loading'
+    )
+    .classList.remove(
+      'show'
+    );
+
+}
+
+</script>
