@@ -1,9 +1,773 @@
-<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  >
+
+  <title>รายงานยอดขาย v4.0</title>
+
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f5f6f8;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+      color: #222;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow:
+        0 2px 10px rgba(0,0,0,.06);
+    }
+
+    h1 {
+      font-size: 22px;
+      margin: 0 0 6px;
+    }
+
+    .user-info {
+      color: #777;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 7px;
+    }
+
+    select,
+    input[type="date"],
+    input[type="number"] {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 10px 13px;
+      font-size: 16px;
+      background: #fff;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #111;
+    }
+
+    .field {
+      margin-bottom: 17px;
+    }
+
+    .employee-selector,
+    .shift-selector {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 13px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .employee-list,
+    .shift-list {
+      display: none;
+      margin-top: 8px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .employee-list.show,
+    .shift-list.show {
+      display: block;
+    }
+
+    .employee-item,
+    .shift-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 14px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .employee-item:last-child,
+    .shift-item:last-child {
+      border-bottom: none;
+    }
+
+    .employee-item input,
+    .shift-item input {
+      width: 21px;
+      height: 21px;
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .selected-info {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .check-box {
+      border-radius: 12px;
+      padding: 13px;
+      margin-top: 12px;
+      background: #f4f4f4;
+      font-size: 14px;
+    }
+
+    .check-box.ok {
+      background: #e8f7ed;
+      color: #157333;
+    }
+
+    .check-box.error {
+      background: #fff0f0;
+      color: #c62828;
+    }
+
+    .photo-upload {
+      width: 100%;
+      min-height: 150px;
+      border: 2px dashed #ccc;
+      border-radius: 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      overflow: hidden;
+      background: #fafafa;
+      position: relative;
+    }
+
+    .photo-upload input {
+      display: none;
+    }
+
+    .photo-content {
+      padding: 25px;
+      color: #777;
+    }
+
+    #photoPreview {
+      display: none;
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+    }
+
+    .submit-btn {
+      width: 100%;
+      min-height: 54px;
+      border: none;
+      border-radius: 14px;
+      background: #111;
+      color: white;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .submit-btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.55);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .loading.show {
+      display: flex;
+    }
+
+    .loading-box {
+      background: white;
+      border-radius: 18px;
+      padding: 25px 30px;
+      text-align: center;
+      min-width: 220px;
+    }
+
+    .spinner {
+      width: 38px;
+      height: 38px;
+      border: 4px solid #ddd;
+      border-top-color: #111;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .readonly-shop {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 13px;
+      background: #f7f7f7;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .small-note {
+      color: #888;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    @media (max-width: 420px) {
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+  <div class="card">
+
+    <h1>
+      รายงานยอดขาย
+    </h1>
+
+    <div
+      class="user-info"
+      id="userInfo"
+    >
+      กำลังเข้าสู่ระบบ LINE...
+    </div>
+
+  </div>
+
+
+  <!-- ==========================================
+       STORE / EMPLOYEE
+       ========================================== -->
+
+  <div class="card">
+
+    <div class="section-title">
+      ข้อมูลร้าน
+    </div>
+
+
+    <div class="field">
+
+      <label class="field-label">
+        ร้าน
+      </label>
+
+      <select
+        id="shop"
+        onchange="shopChanged()"
+      >
+
+        <option value="">
+          -- เลือกร้าน --
+        </option>
+
+        <option value="M1">
+          M1
+        </option>
+
+        <option value="M85">
+          M85
+        </option>
+
+        <option value="M95">
+          M95
+        </option>
+
+        <option value="M89">
+          M89
+        </option>
+
+      </select>
+
+    </div>
+
+
+    <div class="field">
+
+      <label class="field-label">
+        วันที่
+      </label>
+
+      <input
+        type="date"
+        id="date"
+      >
+
+    </div>
+
+
+    <div class="field">
+
+      <label class="field-label">
+        กะ
+      </label>
+
+      <div
+        class="shift-selector"
+        id="shiftSelector"
+        onclick="toggleShifts()"
+      >
+        แตะเพื่อเลือกกะ
+      </div>
+
+
+      <div
+        class="shift-list"
+        id="shiftList"
+      >
+
+        <label class="shift-item">
+
+          <input
+            type="checkbox"
+            value="09.00-14.00"
+            onchange="shiftChanged()"
+          >
+
+          <span>
+            09.00-14.00
+          </span>
+
+        </label>
+
+
+        <label class="shift-item">
+
+          <input
+            type="checkbox"
+            value="14.00-18.00"
+            onchange="shiftChanged()"
+          >
+
+          <span>
+            14.00-18.00
+          </span>
+
+        </label>
+
+
+        <label class="shift-item">
+
+          <input
+            type="checkbox"
+            value="18.00-23.00"
+            onchange="shiftChanged()"
+          >
+
+          <span>
+            18.00-23.00
+          </span>
+
+        </label>
+
+      </div>
+
+
+      <div
+        class="selected-info"
+        id="selectedShifts"
+      >
+        ยังไม่ได้เลือกกะ
+      </div>
+
+    </div>
+
+
+    <div class="field">
+
+      <label class="field-label">
+        ชื่อพนักงาน
+      </label>
+
+
+      <div
+        class="employee-selector"
+        id="employeeSelector"
+        onclick="toggleEmployees()"
+      >
+        กรุณาเลือกร้านก่อน
+      </div>
+
+
+      <div
+        class="employee-list"
+        id="employeeList"
+      >
+      </div>
+
+
+      <div
+        class="selected-info"
+        id="selectedEmployees"
+      >
+        ยังไม่ได้เลือกพนักงาน
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ==========================================
+       SALES
+       ========================================== -->
+
+  <div class="card">
+
+    <div class="section-title">
+      ยอดขาย
+    </div>
+
+
+    <div class="field">
+
+      <label class="field-label">
+        รวมยอดขาย
+      </label>
+
+      <input
+        type="number"
+        id="totalSales"
+        inputmode="decimal"
+        placeholder="0.00"
+        oninput="checkSales()"
+      >
+
+    </div>
+
+
+    <div class="grid">
+
+      <div class="field">
+
+        <label class="field-label">
+          เงินสด
+        </label>
+
+        <input
+          type="number"
+          id="cash"
+          inputmode="decimal"
+          placeholder="0.00"
+          oninput="checkSales()"
+        >
+
+      </div>
+
+
+      <div class="field">
+
+        <label class="field-label">
+          เครดิต
+        </label>
+
+        <input
+          type="number"
+          id="credit"
+          inputmode="decimal"
+          placeholder="0.00"
+          oninput="checkSales()"
+        >
+
+      </div>
+
+    </div>
+
+
+    <div class="field">
+
+      <label class="field-label">
+        คิวอาร์โค้ด
+      </label>
+
+      <input
+        type="number"
+        id="qr"
+        inputmode="decimal"
+        placeholder="0.00"
+        oninput="checkSales()"
+      >
+
+    </div>
+
+
+    <div
+      class="check-box"
+      id="salesCheck"
+    >
+      กรุณากรอกยอดขาย
+    </div>
+
+  </div>
+
+
+  <!-- ==========================================
+       EMPLOYEE PURCHASE
+       ========================================== -->
+
+  <div class="card">
+
+    <div class="section-title">
+      พนักงานซื้อ
+    </div>
+
+
+    <div class="field">
+
+      <label class="field-label">
+        รวมพนักงานซื้อ
+      </label>
+
+      <input
+        type="number"
+        id="employeeTotal"
+        inputmode="decimal"
+        placeholder="0.00"
+        oninput="checkEmployeeSales()"
+      >
+
+    </div>
+
+
+    <div class="grid">
+
+      <div class="field">
+
+        <label class="field-label">
+          พนักงาน เงินสด
+        </label>
+
+        <input
+          type="number"
+          id="employeeCash"
+          inputmode="decimal"
+          placeholder="0.00"
+          oninput="checkEmployeeSales()"
+        >
+
+      </div>
+
+
+      <div class="field">
+
+        <label class="field-label">
+          พนักงาน คิวอาร์โค้ด
+        </label>
+
+        <input
+          type="number"
+          id="employeeQr"
+          inputmode="decimal"
+          placeholder="0.00"
+          oninput="checkEmployeeSales()"
+        >
+
+      </div>
+
+    </div>
+
+
+    <div
+      class="check-box"
+      id="employeeCheck"
+    >
+      กรุณากรอกยอดพนักงานซื้อ
+    </div>
+
+  </div>
+
+
+  <!-- ==========================================
+       SIM
+       ========================================== -->
+
+  <div class="card">
+
+    <div class="section-title">
+      ยอดขายซิม
+    </div>
+
+
+    <input
+      type="number"
+      id="simSales"
+      inputmode="decimal"
+      placeholder="0.00"
+    >
+
+  </div>
+
+
+  <!-- ==========================================
+       PHOTO
+       ========================================== -->
+
+  <div class="card">
+
+    <div class="section-title">
+      ใบส่งยอด
+    </div>
+
+
+    <label
+      class="photo-upload"
+      for="photo"
+    >
+
+      <input
+        type="file"
+        id="photo"
+        accept="image/*"
+        capture="environment"
+        onchange="photoSelected(event)"
+      >
+
+
+      <img
+        id="photoPreview"
+        alt="ตัวอย่างรูป"
+      >
+
+
+      <div
+        class="photo-content"
+        id="photoText"
+      >
+
+        📷<br>
+
+        แตะเพื่อถ่ายรูป<br>
+
+        <small>
+          หรือเลือกรูปจากเครื่อง
+        </small>
+
+      </div>
+
+    </label>
+
+  </div>
+
+
+  <!-- ==========================================
+       SUBMIT
+       ========================================== -->
+
+  <button
+    class="submit-btn"
+    id="submitBtn"
+    onclick="submitForm()"
+  >
+    ส่งรายงาน
+  </button>
+
+</div>
+
+
+<!-- ==========================================
+     LOADING
+     ========================================== -->
+
+<div
+  class="loading"
+  id="loading"
+>
+
+  <div class="loading-box">
+
+    <div class="spinner"></div>
+
+    <div id="loadingText">
+      กำลังส่งข้อมูล...
+    </div>
+
+  </div>
+
+</div>
+
 
 <script>
 
 /****************************************************
- * LIFF
+ * LIFF CONFIG
  ****************************************************/
 
 const LIFF_ID =
@@ -15,11 +779,11 @@ const API_URL =
 
 
 /****************************************************
- * FIXED STORE CONFIG
+ * FIXED STORE / STAFF
  *
- * ================================================
+ * ==================================================
  * แก้รายชื่อพนักงานจริงตรงนี้
- * ================================================
+ * ==================================================
  ****************************************************/
 
 const FIXED_CONFIGS = {
@@ -99,13 +863,13 @@ const SHIFT_OPTIONS = [
 
 let lineProfile = null;
 
+let currentShop = '';
+
 let currentEmployees = [];
 
 let selectedEmployees = [];
 
 let selectedShifts = [];
-
-let currentShop = '';
 
 let imageData = null;
 
@@ -127,19 +891,8 @@ async function init() {
 
   try {
 
-    if (
-      !LIFF_ID
-    ) {
-
-      throw new Error(
-        'ยังไม่ได้ใส่ LIFF ID'
-      );
-
-    }
-
-
     /**********************************************
-     * LIFF INIT
+     * INIT LIFF
      **********************************************/
 
     await liff.init({
@@ -169,21 +922,40 @@ async function init() {
      * PROFILE
      **********************************************/
 
-    lineProfile =
-      await liff.getProfile();
+    try {
 
+      lineProfile =
+        await liff.getProfile();
 
-    document
-      .getElementById(
-        'userInfo'
-      )
-      .innerText =
-        'ผู้ส่ง: ' +
-        lineProfile.displayName;
+      document
+        .getElementById(
+          'userInfo'
+        )
+        .innerText =
+          'ผู้ส่ง: ' +
+          lineProfile.displayName;
+
+    }
+
+    catch (profileError) {
+
+      console.warn(
+        'getProfile failed',
+        profileError
+      );
+
+      document
+        .getElementById(
+          'userInfo'
+        )
+        .innerText =
+          'เข้าสู่ระบบ LINE แล้ว';
+
+    }
 
 
     /**********************************************
-     * LOAD LOCAL CONFIG
+     * LOCAL CONFIG
      **********************************************/
 
     initializeFixedConfig();
@@ -197,8 +969,17 @@ async function init() {
     );
 
 
+    document
+      .getElementById(
+        'userInfo'
+      )
+      .innerText =
+        'เกิดข้อผิดพลาด: ' +
+        error.message;
+
+
     alert(
-      'ไม่สามารถเปิดระบบได้\n\n' +
+      'ไม่สามารถเปิด LIFF ได้\n\n' +
       error.message
     );
 
@@ -208,7 +989,7 @@ async function init() {
 
 
 /****************************************************
- * FIXED CONFIG INIT
+ * INIT FIXED CONFIG
  ****************************************************/
 
 function initializeFixedConfig() {
@@ -219,55 +1000,26 @@ function initializeFixedConfig() {
     );
 
 
-  if (!shopSelect) {
-
-    return;
-
-  }
+  shopSelect.value =
+    '';
 
 
-  /**********************************************
-   * ร้านทั้งหมด
-   **********************************************/
-
-  shopSelect.innerHTML =
-    '<option value="">-- เลือกร้าน --</option>';
+  currentShop =
+    '';
 
 
-  Object.keys(
-    FIXED_CONFIGS
-  ).forEach(
-    function(shop) {
-
-      const option =
-        document.createElement(
-          'option'
-        );
+  currentEmployees =
+    [];
 
 
-      option.value =
-        shop;
+  selectedEmployees =
+    [];
 
 
-      option.textContent =
-        shop;
-
-
-      shopSelect.appendChild(
-        option
-      );
-
-    }
+  renderEmployees(
+    []
   );
 
-
-  currentShop = '';
-
-  currentEmployees = [];
-
-  selectedEmployees = [];
-
-  renderEmployees([]);
 
   updateSelectedEmployees();
 
@@ -275,23 +1027,7 @@ function initializeFixedConfig() {
 
 
 /****************************************************
- * GET FIXED CONFIG
- ****************************************************/
-
-function getFixedConfig(
-  shop
-) {
-
-  return (
-    FIXED_CONFIGS[shop] ||
-    null
-  );
-
-}
-
-
-/****************************************************
- * SHOP CHANGED
+ * SHOP CHANGE
  ****************************************************/
 
 function shopChanged() {
@@ -308,20 +1044,24 @@ function shopChanged() {
     shop;
 
 
-  selectedEmployees = [];
+  selectedEmployees =
+    [];
 
 
   const config =
-    getFixedConfig(
+    FIXED_CONFIGS[
       shop
-    );
+    ];
 
 
   if (!config) {
 
-    currentEmployees = [];
+    currentEmployees =
+      [];
 
-    renderEmployees([]);
+    renderEmployees(
+      []
+    );
 
     updateSelectedEmployees();
 
@@ -329,10 +1069,6 @@ function shopChanged() {
 
   }
 
-
-  /**********************************************
-   * ใช้พนักงานของร้านนั้นทันที
-   **********************************************/
 
   currentEmployees =
     Array.isArray(
@@ -359,7 +1095,7 @@ function shopChanged() {
  ****************************************************/
 
 function renderEmployees(
-  staff
+  employees
 ) {
 
   const list =
@@ -368,23 +1104,17 @@ function renderEmployees(
     );
 
 
-  if (!list) {
-
-    return;
-
-  }
-
-
-  list.innerHTML = '';
+  list.innerHTML =
+    '';
 
 
   if (
-    !staff ||
-    !staff.length
+    !employees ||
+    !employees.length
   ) {
 
     list.innerHTML =
-      '<div style="padding:15px;">' +
+      '<div style="padding:15px;color:#777;">' +
       'กรุณาเลือกร้านก่อน' +
       '</div>';
 
@@ -393,7 +1123,7 @@ function renderEmployees(
   }
 
 
-  staff.forEach(
+  employees.forEach(
     function(
       name,
       index
@@ -401,7 +1131,7 @@ function renderEmployees(
 
       const row =
         document.createElement(
-          'div'
+          'label'
         );
 
 
@@ -420,7 +1150,7 @@ function renderEmployees(
 
 
       checkbox.id =
-        'staff_' +
+        'employee_' +
         index;
 
 
@@ -434,17 +1164,13 @@ function renderEmployees(
       );
 
 
-      const label =
+      const text =
         document.createElement(
-          'label'
+          'span'
         );
 
 
-      label.htmlFor =
-        checkbox.id;
-
-
-      label.textContent =
+      text.innerText =
         name;
 
 
@@ -454,7 +1180,7 @@ function renderEmployees(
 
 
       row.appendChild(
-        label
+        text
       );
 
 
@@ -464,14 +1190,6 @@ function renderEmployees(
 
     }
   );
-
-
-  document
-    .getElementById(
-      'employeeSelector'
-    )
-    .innerText =
-      'แตะเพื่อเลือกพนักงาน';
 
 }
 
@@ -492,6 +1210,10 @@ function toggleEmployees() {
     !currentEmployees.length
   ) {
 
+    alert(
+      'กรุณาเลือกร้านก่อน'
+    );
+
     return;
 
   }
@@ -505,35 +1227,36 @@ function toggleEmployees() {
 
 
 /****************************************************
- * EMPLOYEE CHANGED
+ * EMPLOYEE CHANGE
  ****************************************************/
 
 function employeeChanged() {
 
-  const checkboxes =
-    document.querySelectorAll(
+  selectedEmployees =
+    [];
+
+
+  document
+    .querySelectorAll(
       '#employeeList input[type="checkbox"]'
-    );
-
-
-  selectedEmployees = [];
-
-
-  checkboxes.forEach(
-    function(cb) {
-
-      if (
-        cb.checked
+    )
+    .forEach(
+      function(
+        checkbox
       ) {
 
-        selectedEmployees.push(
-          cb.value
-        );
+        if (
+          checkbox.checked
+        ) {
+
+          selectedEmployees.push(
+            checkbox.value
+          );
+
+        }
 
       }
-
-    }
-  );
+    );
 
 
   updateSelectedEmployees();
@@ -547,124 +1270,112 @@ function employeeChanged() {
 
 function updateSelectedEmployees() {
 
-  const box =
-    document.getElementById(
-      'selectedEmployees'
-    );
-
-
   const selector =
     document.getElementById(
       'employeeSelector'
     );
 
 
+  const box =
+    document.getElementById(
+      'selectedEmployees'
+    );
+
+
   if (
-    !selectedEmployees.length
+    !currentEmployees.length
   ) {
+
+    selector.innerText =
+      'กรุณาเลือกร้านก่อน';
 
     box.innerText =
       'ยังไม่ได้เลือกพนักงาน';
 
+    return;
 
-    if (
-      currentEmployees.length
-    ) {
+  }
 
-      selector.innerText =
-        'แตะเพื่อเลือกพนักงาน';
 
-    }
+  if (
+    !selectedEmployees.length
+  ) {
 
+    selector.innerText =
+      'แตะเพื่อเลือกพนักงาน';
+
+    box.innerText =
+      'ยังไม่ได้เลือกพนักงาน';
 
     return;
 
   }
 
 
-  box.innerText =
+  selector.innerText =
     'เลือกแล้ว ' +
     selectedEmployees.length +
-    ' คน: ' +
+    ' คน';
+
+
+  box.innerText =
     selectedEmployees.join(
       ', '
     );
 
-
-  selector.innerText =
-    'เลือกพนักงานแล้ว ' +
-    selectedEmployees.length +
-    ' คน';
-
 }
 
 
 /****************************************************
- * SHIFT
+ * SHIFTS
  ****************************************************/
 
 function toggleShifts() {
 
-  const list =
-    document.getElementById(
+  document
+    .getElementById(
       'shiftList'
+    )
+    .classList.toggle(
+      'show'
     );
-
-
-  if (!list) {
-
-    return;
-
-  }
-
-
-  list.classList.toggle(
-    'show'
-  );
 
 }
 
 
-/****************************************************
- * SHIFT CHANGED
- ****************************************************/
-
 function shiftChanged() {
 
-  const checkboxes =
-    document.querySelectorAll(
+  selectedShifts =
+    [];
+
+
+  document
+    .querySelectorAll(
       '#shiftList input[type="checkbox"]'
-    );
-
-
-  selectedShifts = [];
-
-
-  checkboxes.forEach(
-    function(cb) {
-
-      if (
-        cb.checked
+    )
+    .forEach(
+      function(
+        checkbox
       ) {
 
-        selectedShifts.push(
-          cb.value
-        );
+        if (
+          checkbox.checked
+        ) {
+
+          selectedShifts.push(
+            checkbox.value
+          );
+
+        }
 
       }
-
-    }
-  );
+    );
 
 
   updateSelectedShifts();
 
 }
 
-
-/****************************************************
- * UPDATE SHIFT
- ****************************************************/
 
 function updateSelectedShifts() {
 
@@ -681,22 +1392,11 @@ function updateSelectedShifts() {
 
 
   if (
-    !selector ||
-    !box
-  ) {
-
-    return;
-
-  }
-
-
-  if (
     !selectedShifts.length
   ) {
 
     selector.innerText =
       'แตะเพื่อเลือกกะ';
-
 
     box.innerText =
       'ยังไม่ได้เลือกกะ';
@@ -730,11 +1430,11 @@ function setToday() {
     new Date();
 
 
-  const year =
+  const yyyy =
     now.getFullYear();
 
 
-  const month =
+  const mm =
     String(
       now.getMonth() + 1
     ).padStart(
@@ -743,7 +1443,7 @@ function setToday() {
     );
 
 
-  const day =
+  const dd =
     String(
       now.getDate()
     ).padStart(
@@ -757,11 +1457,30 @@ function setToday() {
       'date'
     )
     .value =
-      year +
+      yyyy +
       '-' +
-      month +
+      mm +
       '-' +
-      day;
+      dd;
+
+}
+
+
+/****************************************************
+ * NUMBER
+ ****************************************************/
+
+function getNumber(
+  id
+) {
+
+  return Number(
+    document
+      .getElementById(
+        id
+      )
+      .value
+  ) || 0;
 
 }
 
@@ -809,8 +1528,8 @@ function checkSales() {
 
 
   if (
-    !total &&
-    !sum
+    total === 0 &&
+    sum === 0
   ) {
 
     box.className =
@@ -830,7 +1549,7 @@ function checkSales() {
     Math.abs(
       total -
       sum
-    ) < 0.01
+    ) <= 0.01
   ) {
 
     box.className =
@@ -852,9 +1571,9 @@ function checkSales() {
 
   box.innerText =
     'ยอดไม่ตรงกัน: ' +
-    money(total) +
+    total.toLocaleString() +
     ' ≠ ' +
-    money(sum);
+    sum.toLocaleString();
 
 
   return false;
@@ -898,8 +1617,8 @@ function checkEmployeeSales() {
 
 
   if (
-    !total &&
-    !sum
+    total === 0 &&
+    sum === 0
   ) {
 
     box.className =
@@ -919,7 +1638,7 @@ function checkEmployeeSales() {
     Math.abs(
       total -
       sum
-    ) < 0.01
+    ) <= 0.01
   ) {
 
     box.className =
@@ -941,9 +1660,9 @@ function checkEmployeeSales() {
 
   box.innerText =
     'ยอดไม่ตรงกัน: ' +
-    money(total) +
+    total.toLocaleString() +
     ' ≠ ' +
-    money(sum);
+    sum.toLocaleString();
 
 
   return false;
@@ -960,9 +1679,7 @@ function photoSelected(
 ) {
 
   const file =
-    event
-      .target
-      .files[0];
+    event.target.files[0];
 
 
   if (!file) {
@@ -1026,8 +1743,8 @@ function photoSelected(
         .getElementById(
           'photoText'
         )
-        .innerHTML =
-          '✓ เลือกรูปแล้ว';
+        .style.display =
+          'none';
 
     };
 
@@ -1046,12 +1763,7 @@ function photoSelected(
 async function submitForm() {
 
   const shop =
-    currentShop ||
-    document
-      .getElementById(
-        'shop'
-      )
-      .value;
+    currentShop;
 
 
   const date =
@@ -1063,7 +1775,7 @@ async function submitForm() {
 
 
   /**************************************************
-   * SHOP
+   * VALIDATE SHOP
    **************************************************/
 
   if (!shop) {
@@ -1078,7 +1790,7 @@ async function submitForm() {
 
 
   /**************************************************
-   * DATE
+   * VALIDATE DATE
    **************************************************/
 
   if (!date) {
@@ -1093,7 +1805,7 @@ async function submitForm() {
 
 
   /**************************************************
-   * SHIFT
+   * VALIDATE SHIFT
    **************************************************/
 
   if (
@@ -1110,7 +1822,7 @@ async function submitForm() {
 
 
   /**************************************************
-   * EMPLOYEE
+   * VALIDATE EMPLOYEE
    **************************************************/
 
   if (
@@ -1130,7 +1842,9 @@ async function submitForm() {
    * SALES
    **************************************************/
 
-  if (!checkSales()) {
+  if (
+    !checkSales()
+  ) {
 
     alert(
       'กรุณาตรวจสอบยอดขาย\n\n' +
@@ -1152,9 +1866,7 @@ async function submitForm() {
   ) {
 
     alert(
-      'กรุณาตรวจสอบยอดพนักงานซื้อ\n\n' +
-      'เงินสด + QR ' +
-      'ต้องเท่ากับรวมพนักงานซื้อ'
+      'กรุณาตรวจสอบยอดพนักงานซื้อ'
     );
 
     return;
@@ -1270,24 +1982,25 @@ async function submitForm() {
 
 
   /**************************************************
-   * LOADING
+   * SEND
    **************************************************/
+
+  document
+    .getElementById(
+      'submitBtn'
+    )
+    .disabled =
+      true;
+
 
   showLoading(
     'กำลังส่งข้อมูล...'
   );
 
 
-  document
-    .getElementById(
-      'submitBtn'
-    )
-    .disabled = true;
-
-
   try {
 
-    await apiPost(
+    await sendToGoogleAppsScript(
       data
     );
 
@@ -1296,25 +2009,11 @@ async function submitForm() {
 
 
     alert(
-      '✓ ส่งรายงานเรียบร้อยแล้ว'
+      '✓ บันทึกรายงานเรียบร้อยแล้ว'
     );
 
 
-    if (
-      typeof liff !==
-      'undefined' &&
-      liff.isInClient()
-    ) {
-
-      liff.closeWindow();
-
-    }
-
-    else {
-
-      resetForm();
-
-    }
+    resetForm();
 
   }
 
@@ -1327,7 +2026,8 @@ async function submitForm() {
       .getElementById(
         'submitBtn'
       )
-      .disabled = false;
+      .disabled =
+        false;
 
 
     alert(
@@ -1341,10 +2041,12 @@ async function submitForm() {
 
 
 /****************************************************
- * POST API
+ * SEND TO GAS
+ *
+ * ใช้ no-cors เพื่อไม่ติด CORS
  ****************************************************/
 
-function apiPost(
+function sendToGoogleAppsScript(
   data
 ) {
 
@@ -1354,60 +2056,53 @@ function apiPost(
       reject
     ) {
 
-      try {
+      fetch(
+        API_URL,
+        {
 
-        fetch(
-          API_URL,
-          {
+          method:
+            'POST',
 
-            method:
-              'POST',
+          mode:
+            'no-cors',
 
-            mode:
-              'no-cors',
+          headers: {
 
-            headers: {
+            'Content-Type':
+              'text/plain;charset=utf-8'
 
-              'Content-Type':
-                'text/plain;charset=utf-8'
+          },
 
-            },
+          body:
+            JSON.stringify(
+              data
+            )
 
-            body:
-              JSON.stringify(
-                data
-              )
+        }
+      )
+      .then(
+        function() {
 
-          }
-        )
-        .then(
-          function() {
+          /*
+           * no-cors อ่าน response ไม่ได้
+           * แต่ request ถูกส่งไป Apps Script แล้ว
+           */
 
-            resolve({
-              success: true
-            });
+          resolve({
+            success: true
+          });
 
-          }
-        )
-        .catch(
-          function(error) {
+        }
+      )
+      .catch(
+        function(error) {
 
-            reject(
-              error
-            );
+          reject(
+            error
+          );
 
-          }
-        );
-
-      }
-
-      catch (error) {
-
-        reject(
-          error
-        );
-
-      }
+        }
+      );
 
     }
   );
@@ -1421,40 +2116,26 @@ function apiPost(
 
 function resetForm() {
 
-  [
+  document
+    .querySelectorAll(
+      'input[type="number"]'
+    )
+    .forEach(
+      function(input) {
 
-    'totalSales',
+        input.value =
+          '';
 
-    'cash',
-
-    'credit',
-
-    'qr',
-
-    'employeeTotal',
-
-    'employeeCash',
-
-    'employeeQr',
-
-    'simSales'
-
-  ]
-  .forEach(
-    function(id) {
-
-      document
-        .getElementById(id)
-        .value = '';
-
-    }
-  );
+      }
+    );
 
 
-  selectedEmployees = [];
+  selectedEmployees =
+    [];
 
 
-  selectedShifts = [];
+  selectedShifts =
+    [];
 
 
   document
@@ -1464,23 +2145,42 @@ function resetForm() {
     .forEach(
       function(cb) {
 
-        cb.checked = false;
+        cb.checked =
+          false;
 
       }
     );
 
 
+  document
+    .querySelectorAll(
+      '#employeeList input[type="checkbox"]'
+    )
+    .forEach(
+      function(cb) {
+
+        cb.checked =
+          false;
+
+      }
+    );
+
+
+  updateSelectedEmployees();
+
   updateSelectedShifts();
 
 
-  imageData = null;
+  imageData =
+    null;
 
 
   document
     .getElementById(
       'photo'
     )
-    .value = '';
+    .value =
+      '';
 
 
   document
@@ -1495,15 +2195,8 @@ function resetForm() {
     .getElementById(
       'photoText'
     )
-    .innerHTML =
-      '📷<br>' +
-      'แตะเพื่อถ่ายรูป<br>' +
-      '<small>' +
-      'หรือเลือกรูปจากเครื่อง' +
-      '</small>';
-
-
-  updateSelectedEmployees();
+    .style.display =
+      'block';
 
 
   document
@@ -1516,52 +2209,7 @@ function resetForm() {
 
   checkSales();
 
-
   checkEmployeeSales();
-
-}
-
-
-/****************************************************
- * NUMBER
- ****************************************************/
-
-function getNumber(
-  id
-) {
-
-  return Number(
-    document
-      .getElementById(id)
-      .value
-  ) || 0;
-
-}
-
-
-/****************************************************
- * MONEY
- ****************************************************/
-
-function money(
-  value
-) {
-
-  return Number(
-    value || 0
-  )
-    .toLocaleString(
-      'th-TH',
-      {
-
-        minimumFractionDigits:
-          2,
-
-        maximumFractionDigits:
-          2
-
-      }
-    );
 
 }
 
@@ -1607,3 +2255,6 @@ function hideLoading() {
 }
 
 </script>
+
+</body>
+</html>
