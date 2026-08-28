@@ -10,7 +10,7 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
   >
 
-  <title>รายงานยอดขาย v4.2</title>
+  <title>รายงานยอดขาย v4.3</title>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
@@ -675,6 +675,33 @@
 
   </div>
 
+  <!-- ==========================================
+    * NOTE
+     ========================================== -->
+
+<div class="card">
+
+  <div class="section-title">
+    หมายเหตุ
+  </div>
+
+  <textarea
+    id="note"
+    placeholder="กรอกหมายเหตุเพิ่มเติม (ถ้ามี)"
+    rows="4"
+    style="
+      width:100%;
+      padding:13px;
+      border:1px solid #ddd;
+      border-radius:12px;
+      font-size:16px;
+      font-family:inherit;
+      resize:vertical;
+      outline:none;
+    "
+  ></textarea>
+
+</div>
 
   <!-- ==========================================
        PHOTO
@@ -1716,7 +1743,6 @@ function checkEmployeeSales() {
 
 }
 
-
 /****************************************************
  * PHOTO
  ****************************************************/
@@ -2021,7 +2047,12 @@ async function submitForm() {
     employees:
       selectedEmployees,
 
-
+    note:
+      document
+        .getElementById('note')
+        .value
+        .trim(),
+        
     image:
       imageData
 
