@@ -1566,40 +1566,29 @@ function getNumber(
 function checkSales() {
 
   const total =
-    getNumber(
-      'totalSales'
-    );
-
+    getNumber('totalSales');
 
   const cash =
-    getNumber(
-      'cash'
-    );
-
+    getNumber('cash');
 
   const credit =
-    getNumber(
-      'credit'
-    );
-
+    getNumber('credit');
 
   const qr =
-    getNumber(
-      'qr'
-    );
-
+    getNumber('qr');
 
   const sum =
     cash +
     credit +
     qr;
 
-
   const box =
-    document.getElementById(
-      'salesCheck'
-    );
+    document.getElementById('salesCheck');
 
+
+  // ==========================================
+  // ยอดขาย 0 บาท สามารถส่งได้
+  // ==========================================
 
   if (
     total === 0 &&
@@ -1607,17 +1596,19 @@ function checkSales() {
   ) {
 
     box.className =
-      'check-box';
-
+      'check-box ok';
 
     box.innerText =
-      'กรุณากรอกยอดขาย';
+      '✓ ยอดขาย 0 บาท';
 
-
-    return false;
+    return true;
 
   }
 
+
+  // ==========================================
+  // ตรวจสอบยอดขายปกติ
+  // ==========================================
 
   if (
     Math.abs(
@@ -1629,26 +1620,26 @@ function checkSales() {
     box.className =
       'check-box ok';
 
-
     box.innerText =
       '✓ ยอดขายถูกต้อง';
-
 
     return true;
 
   }
 
 
+  // ==========================================
+  // ยอดไม่ตรง
+  // ==========================================
+
   box.className =
     'check-box error';
-
 
   box.innerText =
     'ยอดไม่ตรงกัน: ' +
     total.toLocaleString() +
     ' ≠ ' +
     sum.toLocaleString();
-
 
   return false;
 
