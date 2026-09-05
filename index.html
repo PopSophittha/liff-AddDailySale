@@ -580,7 +580,7 @@
 
 
   <!-- ==========================================
-       EMPLOYEE PURCHASE
+       SIM
        ========================================== -->
 
   <div class="card">
@@ -601,7 +601,6 @@
         id="simTotal"
         inputmode="decimal"
         placeholder="0.00"
-        oninput="checkEmployeeSales()"
       >
 
     </div>
@@ -620,7 +619,6 @@
           id="simCost"
           inputmode="decimal"
           placeholder="0.00"
-          oninput="checkEmployeeSales()"
         >
 
       </div>
@@ -636,8 +634,7 @@
           type="number"
           id="simAmount"
           inputmode="decimal"
-          placeholder="0.00"
-          oninput="checkEmployeeSales()"
+          placeholder="0"
         >
 
       </div>
@@ -1617,95 +1614,6 @@ function checkSales() {
 
 }
 
-
-/****************************************************
- * EMPLOYEE SALES CHECK
- ****************************************************/
-
-function checkEmployeeSales() {
-
-  const total =
-    getNumber(
-      'employeeTotal'
-    );
-
-
-  const cash =
-    getNumber(
-      'employeeCash'
-    );
-
-
-  const qr =
-    getNumber(
-      'employeeQr'
-    );
-
-
-  const sum =
-    cash +
-    qr;
-
-
-  const box =
-    document.getElementById(
-      'employeeCheck'
-    );
-
-
-  if (
-    total === 0 &&
-    sum === 0
-  ) {
-
-    box.className =
-      'check-box';
-
-
-    box.innerText =
-      'กรุณากรอกยอดพนักงานซื้อ';
-
-
-    return true;
-
-  }
-
-
-  if (
-    Math.abs(
-      total -
-      sum
-    ) <= 0.01
-  ) {
-
-    box.className =
-      'check-box ok';
-
-
-    box.innerText =
-      '✓ ยอดพนักงานซื้อถูกต้อง';
-
-
-    return true;
-
-  }
-
-
-  box.className =
-    'check-box error';
-
-
-  box.innerText =
-    'ยอดไม่ตรงกัน: ' +
-    total.toLocaleString() +
-    ' ≠ ' +
-    sum.toLocaleString();
-
-
-  return false;
-
-}
-
 /****************************************************
  * PHOTO
  ****************************************************/
@@ -1983,29 +1891,22 @@ async function submitForm() {
       ),
 
 
-    employeeTotal:
+    simTotal:
       getNumber(
-        'employeeTotal'
+        'simTotal'
       ),
 
 
-    employeeCash:
+    simCost:
       getNumber(
-        'employeeCash'
+        'simCost'
       ),
 
 
-    employeeQr:
+    simAmount:
       getNumber(
-        'employeeQr'
+        'simAmount'
       ),
-
-
-    simSales:
-      getNumber(
-        'simSales'
-      ),
-
 
     employees:
       selectedEmployees,
