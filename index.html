@@ -10,7 +10,7 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
   >
 
-  <title>รายงานยอดขาย v6.1</title>
+  <title>รายงานยอดขาย v2.6.2</title>
 
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
@@ -1780,8 +1780,11 @@ async function submitForm() {
         .trim(),
 
     image:
-      imageData
-
+      imageData,
+    
+    submissionId:
+      Date.now().toString(36) + '_' +
+      Math.random().toString(36).slice(2, 12),
   };
 
 
@@ -1838,67 +1841,127 @@ async function submitForm() {
  * SEND TO GAS
  ****************************************************/
 
-function sendToGoogleAppsScript(
-  data
-) {
+async function sendToGoogleAppsScript(data) {
+  // ส่งข้อมูลเพียงครั้งเดียว
+  // เพราะ no-cors ไม่สามารถอ่าน response จาก POST ได้
+  await fetch(API_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify(data)
+  });
 
-  return new Promise(
-    function(
-      resolve,
-      reject
-    ) {
+  // รอให้ Apps Script ยืนยันว่าบันทึกข้อมูลสำเร็จ
+  const deadline = Date.now() + 90000;
+  let lastError = '';
 
-      fetch(
-        API_URL,
-        {
+  while (Date.now() < deadline) {
+    try {
+      const result = await getSubmissionStatus(data.submissionId);
 
-          method:
-            'POST',
+      if (
+        result &&
+        result.status === 'success' &&
+        result.success === true
+      ) {
+        return result;
+      }
 
-          mode:
-            'no-cors',
+      if (result && result.status === 'error') {
+        throw new Error(
+          'SERVER_STATUS_ERROR:' +
+          (result.message || 'บันทึกข้อมูลไม่สำเร็จ')
+        );
+      }
 
-          headers: {
+      lastError =
+        (result && result.message) ||
+        'กำลังรอผลการบันทึก';
+    } catch (error) {
+      if (
+        error.message &&
+        error.message.indexOf('SERVER_STATUS_ERROR:') === 0
+      ) {
+        throw new Error(
+          error.message.replace('SERVER_STATUS_ERROR:', '')
+        );
+      }
 
-            'Content-Type':
-              'text/plain;charset=utf-8'
-
-          },
-
-          body:
-            JSON.stringify(
-              data
-            )
-
-        }
-      )
-
-      .then(
-        function() {
-
-          resolve({
-            success: true
-          });
-
-        }
-      )
-
-      .catch(
-        function(error) {
-
-          reject(
-            error
-          );
-
-        }
-      );
-
+      lastError = error.message || String(error);
     }
-  );
 
+    await new Promise(function(resolve) {
+      setTimeout(resolve, 1800);
+    });
+  }
+
+  throw new Error(
+    'ยังยืนยันผลการบันทึกไม่ได้ กรุณาตรวจสอบ Google Sheets ก่อนส่งซ้ำ' +
+    (lastError ? '\nรายละเอียด: ' + lastError : '')
+  );
 }
 
+function getSubmissionStatus(id) {
+  return new Promise(function(resolve, reject) {
+    const callbackName =
+      'salesStatus_' +
+      Date.now().toString(36) +
+      '_' +
+      Math.random().toString(36).slice(2, 9);
 
+    const script = document.createElement('script');
+    let finished = false;
+
+    const timer = setTimeout(function() {
+      finish(new Error('หมดเวลาตรวจสอบสถานะ'));
+    }, 12000);
+
+    function finish(error, result) {
+      if (finished) return;
+
+      finished = true;
+      clearTimeout(timer);
+
+      try {
+        delete window[callbackName];
+      } catch (e) {}
+
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+
+      if (error) {
+        reject(error);
+      } else {
+        resolve(result);
+      }
+    }
+
+    window[callbackName] = function(result) {
+      finish(null, result || {
+        success: false,
+        status: 'pending',
+        message: 'ยังไม่พบสถานะการบันทึก'
+      });
+    };
+
+    script.onerror = function() {
+      finish(
+        new Error('ไม่สามารถตรวจสอบสถานะจาก Apps Script ได้')
+      );
+    };
+
+    script.src =
+      API_URL +
+      '?action=status&id=' + encodeURIComponent(id) +
+      '&callback=' + encodeURIComponent(callbackName) +
+      '&_=' + Date.now();
+
+    document.head.appendChild(script);
+  });
+}
 /****************************************************
  * RESET
  ****************************************************/
